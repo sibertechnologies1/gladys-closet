@@ -1,11 +1,18 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import hero1 from "./Images/hero1.jpg";
+import hero2 from "./Images/hero2.jpg";
+import hero3 from "./Images/hero3.jpg";
+import hero4 from "./Images/hero4.jpg";
+import hero5 from "./Images/hero5.jpg";
+import hero6 from "./Images/hero6.jpg";
+import hero7 from "./Images/hero7.jpg";
 
 const slides = [
   {
     id: 1,
-    image: new URL("./images/hero1.jpg", import.meta.url).href,
+    image: hero1,
     subtitle: "New Arrival",
     title: "Urban Chic & Street Style",
     description: "Express your individuality with our vibrant statement dresses and accessories.",
@@ -13,7 +20,7 @@ const slides = [
   },
   {
     id: 2,
-    image: new URL("./images/hero2.jpg", import.meta.url).href,
+    image: hero2,
     subtitle: "Fine Jewelry",
     title: "Layered Elegance",
     description: "Discover handcrafted gold-tone pendants and layered chains for every occasion.",
@@ -21,7 +28,7 @@ const slides = [
   },
   {
     id: 3,
-    image: new URL("./images/hero3.jpg", import.meta.url).href,
+    image: hero3,
     subtitle: "Autumn Collection",
     title: "Classic Overcoats & Tailoring",
     description: "Refined outerwear designed to keep you warm with timeless sophistication.",
@@ -29,7 +36,7 @@ const slides = [
   },
   {
     id: 4,
-    image: new URL("./images/hero4.jpg", import.meta.url).href,
+    image: hero4,
     subtitle: "Pop of Color",
     title: "Bold Knitwear & Accessories",
     description: "Brighten your wardrobe with rich textures and striking color combinations.",
@@ -37,7 +44,7 @@ const slides = [
   },
   {
     id: 5,
-    image: new URL("./images/hero5.jpg", import.meta.url).href,
+    image: hero5,
     subtitle: "Luxury Details",
     title: "Minimalist Pendant Sets",
     description: "Subtle gold craftsmanship tailored to complement high-fashion aesthetics.",
@@ -45,7 +52,7 @@ const slides = [
   },
   {
     id: 6,
-    image: new URL("./images/hero6.jpg", import.meta.url).href,
+    image: hero6,
     subtitle: "Signature Accessories",
     title: "Modern Chain Collections",
     description: "Sleek geometric lines combined with premium materials for daily luxury.",
@@ -53,7 +60,7 @@ const slides = [
   },
   {
     id: 7,
-    image: new URL("./images/hero7.jpg", import.meta.url).href,
+    image: hero7,
     subtitle: "Contemporary Wear",
     title: "Tailored Tones & Layering",
     description: "Clean silhouettes and versatile cuts engineered for supreme comfort.",
