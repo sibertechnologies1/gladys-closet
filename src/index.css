@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-brand-canvas text-brand-navy font-sans antialiased;
+}
+
+/* Visible keyboard focus using brand pink */
+:focus-visible {
+  outline: 2px solid theme("colors.brand.pink");
+  outline-offset: 2px;
+}
+
+.input {
+  @apply w-full rounded-md border border-purple-200 bg-white px-3 py-2 text-sm text-brand-navy outline-none transition duration-200;
+}
+
+.input:focus {
+  @apply border-brand-purple ring-1 ring-brand-purple;
+}
