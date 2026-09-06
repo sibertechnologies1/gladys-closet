@@ -8,7 +8,7 @@ const categories = [
     name: "Women's Collection",
     slug: "women",
     itemCount: "120+ Items",
-    image: new URL("./Images/women.jpg", import.meta.url).href,
+    image: new URL("./Images/women.jpeg", import.meta.url).href,
   },
   {
     id: 2,
@@ -29,7 +29,7 @@ const categories = [
     name: "Signature Accessories",
     slug: "accessories",
     itemCount: "60+ Items",
-    image: new URL("./Images/accessories.jpg", import.meta.url).href,
+    image: new URL("./Images/accessories.jpeg", import.meta.url).href,
   },
 ];
 

@@ -10,7 +10,7 @@ export default function Home() {
       <Navbar />
       <HomeHeroSection />
       <FeaturedCategories />
-      <ProductGrid />
+      <ProductGrid selectedCategory="all" />
       <Footer />
     </div>
   );

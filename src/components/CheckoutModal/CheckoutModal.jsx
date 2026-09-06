@@ -4,6 +4,7 @@ import { FiX, FiLock, FiCheckCircle } from 'react-icons/fi';
 import { useCart } from '../../context/CartContext';
 import { supabase } from '../../lib/supabase';
 
+
 export default function CheckoutModal({ isOpen, onClose }) {
   const { cart, totalPesewas, setIsCartOpen } = useCart();
   const [loading, setLoading] = useState(false);
