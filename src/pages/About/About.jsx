@@ -1,4 +1,6 @@
 import React from 'react';
+import Navbar from '../../components/Navbar/Navbar';
+import Footer from '../../components/Footer/Footer';
 import AboutHero from '../../components/AboutHero/AboutHero';
 import { FiMapPin, FiPhone, FiMail, FiCheckCircle } from 'react-icons/fi';
 
@@ -11,6 +13,7 @@ export default function About() {
 
   return (
     <div className="bg-white min-h-screen">
+      <Navbar />
       {/* Hero Section */}
      <AboutHero />
 
@@ -69,11 +72,11 @@ export default function About() {
               </div>
               <div className="flex items-center gap-3">
                 <FiPhone className="text-purple-600 w-5 h-5" />
-                <span>+233 (0) 59 805 215</span>
+                <span>+233 (0) 595 805 215</span>
               </div>
               <div className="flex items-center gap-3">
                 <FiMail className="text-purple-600 w-5 h-5" />
-                <span>info@gladyscloset.com</span>
+                <span>gladyscloset@gmail.com</span>
               </div>
             </div>
           </div>
@@ -86,6 +89,8 @@ export default function About() {
           </a>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

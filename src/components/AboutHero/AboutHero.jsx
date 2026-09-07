@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
-import Abhero1 from './Images/AbHero1.jpeg';
-import Abhero2 from './Images/AbHero2.jpeg';
-import Abhero3 from './Images/AbHero3.jpeg';
-import Abhero4 from './Images/AbHero4.jpeg';
-import Abhero5 from './Images/AbHero5.jpeg';
-import Abhero6 from './Images/AbHero6.jpeg';
+import Abhero1 from '../AboutHero/Images/Abhero1.jpeg';
+import Abhero2 from '../AboutHero/Images/Abhero2.jpeg';
+import Abhero3 from '../AboutHero/Images/Abhero3.jpeg';
+import Abhero4 from '../AboutHero/Images/Abhero4.jpeg';
+import Abhero5 from '../AboutHero/Images/Abhero5.jpeg';
+import Abhero6 from '../AboutHero/Images/Abhero6.jpeg';
 
 const slides = [
   {
