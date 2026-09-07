@@ -1,10 +1,29 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
-  const [cart, setCart] = useState([]);
+  // Load initial cart state from localStorage
+  const [cart, setCart] = useState(() => {
+    try {
+      const savedCart = localStorage.getItem('gladys_cart');
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (error) {
+      console.error('Failed to parse cart from localStorage:', error);
+      return [];
+    }
+  });
+
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // Sync cart state with localStorage whenever it updates
+  useEffect(() => {
+    try {
+      localStorage.setItem('gladys_cart', JSON.stringify(cart));
+    } catch (error) {
+      console.error('Failed to save cart to localStorage:', error);
+    }
+  }, [cart]);
 
   const addToCart = (product, selectedSize = 'M') => {
     setCart((prevCart) => {
@@ -41,8 +60,12 @@ export function CartProvider({ children }) {
     );
   };
 
+  const clearCart = () => {
+    setCart([]);
+  };
+
   const totalPesewas = cart.reduce(
-    (sum, item) => sum + item.price_pesewas * item.quantity,
+    (sum, item) => sum + (item.price_pesewas || 0) * item.quantity,
     0
   );
 
@@ -57,6 +80,7 @@ export function CartProvider({ children }) {
         addToCart,
         removeFromCart,
         updateQuantity,
+        clearCart,
         totalPesewas,
         totalItems,
       }}

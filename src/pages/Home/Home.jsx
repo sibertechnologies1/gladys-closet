@@ -5,6 +5,7 @@ import FeaturedCategories from "../../components/FeaturedCategories/FeaturedCate
 import ProductGrid from "../../components/ProductGrid/ProductGrid";
 import Testimonials from "../../components/Testimonials/Testimonials";
 import TrustBadges from "../../components/TrustBadges/TrustBadges";
+import Newsletter from "../../components/Newsletter/Newsletter";
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
       <ProductGrid selectedCategory="all" />
       <Testimonials />
       <TrustBadges />
+      <Newsletter />
       <Footer />
     </div>
   );

@@ -1,12 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiLock, FiCheckCircle } from 'react-icons/fi';
+import { FiX, FiLock } from 'react-icons/fi';
 import { useCart } from '../../context/CartContext';
 import { supabase } from '../../lib/supabase';
 
-
 export default function CheckoutModal({ isOpen, onClose }) {
-  const { cart, totalPesewas, setIsCartOpen } = useCart();
+  const { cart, totalPesewas, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const [customer, setCustomer] = useState({
     name: '',
@@ -17,6 +16,15 @@ export default function CheckoutModal({ isOpen, onClose }) {
     region: 'Greater Accra',
   });
 
+  useEffect(() => {
+    if (!window.PaystackPop) {
+      const script = document.createElement('script');
+      script.src = 'https://js.paystack.co/v1/inline.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
   if (!isOpen) return null;
 
   const handleChange = (e) => {
@@ -25,8 +33,12 @@ export default function CheckoutModal({ isOpen, onClose }) {
 
   const handlePaystackPayment = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    if (cart.length === 0) {
+      alert('Your cart is empty.');
+      return;
+    }
 
+    setLoading(true);
     const orderNumber = `GC-${Date.now()}`;
 
     try {
@@ -52,7 +64,11 @@ export default function CheckoutModal({ isOpen, onClose }) {
 
       if (orderError) throw orderError;
 
-      // 2. Initialize Paystack Popup
+      if (!window.PaystackPop) {
+        throw new Error('Paystack SDK failed to load. Check your internet connection.');
+      }
+
+      // 2. Initialize Paystack Popup with explicit inline callback syntax
       const handler = window.PaystackPop.setup({
         key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
         email: customer.email,
@@ -65,23 +81,22 @@ export default function CheckoutModal({ isOpen, onClose }) {
             { display_name: 'Phone', variable_name: 'customer_phone', value: customer.phone },
           ],
         },
-        callback: async function (response) {
-          // Update order status in Supabase
-          await supabase
+        callback: function (response) {
+          supabase
             .from('orders')
             .update({ status: 'paid', paystack_reference: response.reference })
-            .eq('id', order.id);
-
-          // Decrement stock for purchased items
-          for (const item of cart) {
-            await supabase.rpc('decrement_stock', {
-              product_id: item.id,
-              quantity: item.quantity,
+            .eq('id', order.id)
+            .then(() => {
+              clearCart();
+              setLoading(false);
+              onClose();
+              alert('Payment Successful! Your order has been placed.');
+            })
+            .catch((err) => {
+              console.error('Post-payment error:', err);
+              alert('Payment was received, but updating order status failed. Please contact support.');
+              setLoading(false);
             });
-          }
-
-          alert('Payment Successful! Your order has been placed.');
-          window.location.reload();
         },
         onClose: function () {
           alert('Payment window closed. Order saved as pending.');
@@ -183,7 +198,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-brand-pink hover:bg-brand-purple text-white py-3.5 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 transition duration-300 shadow-lg"
+              className="w-full bg-brand-pink hover:bg-brand-purple text-white py-3.5 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 transition duration-300 shadow-lg disabled:opacity-50"
             >
               <FiLock className="w-4 h-4" />
               {loading ? 'Processing...' : 'Pay Now via Paystack'}

@@ -1,23 +1,24 @@
+import { Link } from "react-router-dom";
 import { FiPhone, FiMail, FiMapPin, FiInstagram, FiFacebook } from "react-icons/fi";
 import logo from "../../assets/logo.png";
 
 export default function Footer() {
   return (
-    <footer className="bg-brand-navy text-gray-300 border-t border-purple-900/50 mt-12 sm:mt-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+    <footer className="w-full bg-[#0f172a] text-gray-300 border-t border-purple-900/50 mt-12 sm:mt-20">
+      <div className="w-full mx-auto px-4 sm:px-6 py-10 sm:py-16">
         
-        {/* Responsive Grid: 1 col on mobile, 2 col on small screens, 4 col on desktop */}
+        {/* Responsive Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           
           {/* Brand Column */}
           <div className="space-y-4 sm:col-span-2 lg:col-span-1">
-            <a href="#" className="inline-block">
+            <Link to="/" className="inline-block">
               <img 
                 src={logo} 
                 alt="Gladys' Closet Logo" 
                 className="h-10 sm:h-12 w-auto object-contain brightness-0 invert"
               />
-            </a>
+            </Link>
             <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
               High-end apparel, tailored kaftans, and luxury accessories curated for your style.
             </p>
@@ -45,10 +46,10 @@ export default function Footer() {
               Navigation
             </h3>
             <ul className="space-y-2.5 text-sm text-gray-300">
-              <li><a href="#" className="hover:text-amber-300 transition">Home</a></li>
-              <li><a href="#" className="hover:text-amber-300 transition">Shop All</a></li>
-              <li><a href="#" className="hover:text-amber-300 transition">About Us</a></li>
-              <li><a href="#" className="hover:text-amber-300 transition">Contact Us</a></li>
+              <li><Link to="/" className="hover:text-amber-300 transition">Home</Link></li>
+              <li><Link to="/shop" className="hover:text-amber-300 transition">Shop All</Link></li>
+              <li><Link to="/about" className="hover:text-amber-300 transition">About Us</Link></li>
+              <li><Link to="/contact" className="hover:text-amber-300 transition">Contact Us</Link></li>
             </ul>
           </div>
 
@@ -58,14 +59,14 @@ export default function Footer() {
               Categories
             </h3>
             <ul className="space-y-2.5 text-sm text-gray-300">
-              <li><a href="#" className="hover:text-amber-300 transition">Women</a></li>
-              <li><a href="#" className="hover:text-amber-300 transition">Men</a></li>
-              <li><a href="#" className="hover:text-amber-300 transition">Kids</a></li>
-              <li><a href="#" className="hover:text-amber-300 transition">Sports</a></li>
+              <li><Link to="/shop?category=women" className="hover:text-amber-300 transition">Women</Link></li>
+              <li><Link to="/shop?category=men" className="hover:text-amber-300 transition">Men</Link></li>
+              <li><Link to="/shop?category=kids" className="hover:text-amber-300 transition">Kids</Link></li>
+              <li><Link to="/shop?category=sports" className="hover:text-amber-300 transition">Sports</Link></li>
               <li>
-                <a href="#" className="text-pink-400 font-semibold hover:text-pink-300 transition">
+                <Link to="/shop?sort=sale" className="text-pink-400 font-semibold hover:text-pink-300 transition">
                   Sale Items
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -104,8 +105,8 @@ export default function Footer() {
         <div className="border-t border-white/10 mt-10 pt-6 flex flex-col sm:flex-row justify-between items-center text-xs text-gray-400 gap-3">
           <p>© {new Date().getFullYear()} Gladys' Closet. All rights reserved.</p>
           <div className="flex space-x-6">
-            <a href="#" className="hover:text-gray-200 transition">Privacy Policy</a>
-            <a href="#" className="hover:text-gray-200 transition">Terms of Service</a>
+            <Link to="/privacy" className="hover:text-gray-200 transition">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-gray-200 transition">Terms of Service</Link>
           </div>
         </div>
 
