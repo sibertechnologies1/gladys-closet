@@ -3,6 +3,7 @@ import HomeHeroSection from "../../components/HomeHeroSection/HomeHeroSection";
 import Footer from "../../components/Footer/Footer";
 import FeaturedCategories from "../../components/FeaturedCategories/FeaturedCategories";
 import ProductGrid from "../../components/ProductGrid/ProductGrid";
+import Testimonials from "../../components/Testimonials/Testimonials";
 
 export default function Home() {
   return (
@@ -11,6 +12,7 @@ export default function Home() {
       <HomeHeroSection />
       <FeaturedCategories />
       <ProductGrid selectedCategory="all" />
+      <Testimonials />
       <Footer />
     </div>
   );
