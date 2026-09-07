@@ -1,41 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
-import Abhero1 from '../AboutHero/Images/Abhero1.jpeg';
-import Abhero2 from '../AboutHero/Images/Abhero2.jpeg';
-import Abhero3 from '../AboutHero/Images/Abhero3.jpeg';
-import Abhero4 from '../AboutHero/Images/Abhero4.jpeg';
-import Abhero5 from '../AboutHero/Images/Abhero5.jpeg';
-import Abhero6 from '../AboutHero/Images/Abhero6.jpeg';
+import img1 from './Images/Abhero1.jpeg';
+import img2 from './Images/Abhero2.jpeg';
+import img3 from './Images/Abhero3.jpeg';
+import img4 from './Images/Abhero4.jpeg';
+import img5 from './Images/Abhero5.jpeg';
+import img6 from './Images/Abhero6.jpeg';
 
 const slides = [
   {
-    image: Abhero1,
+    image: img1,
     title: "About Gladys' Closet",
     subtitle: "Your premier fashion destination in Accra, delivering curated style, confidence, and quality directly to your doorstep.",
   },
   {
-    image: Abhero2,
+    image: img2,
     title: "Welcome To Our Boutique",
     subtitle: "Step inside and explore handpicked outfits crafted to elevate your daily style.",
   },
   {
-    image: Abhero3,
+    image: img3,
     title: "Elegance Redefined",
     subtitle: "Discover tailored designs and timeless fashion pieces built for every occasion.",
   },
   {
-    image: Abhero4,
+    image: img4,
     title: "Fashion For Everyone",
     subtitle: "Bringing you modern trends and vibrant styles for both men and women.",
   },
   {
-    image: Abhero5,
+    image: img5,
     title: "Curated Accessories",
     subtitle: "Complete your look with our exclusive collection of jewelry and handbags.",
   },
   {
-    image: Abhero6,
+    image: img6,
     title: "Shop With Confidence",
     subtitle: "Join thousands of satisfied shoppers across Accra and beyond.",
   },
