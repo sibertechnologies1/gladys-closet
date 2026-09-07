@@ -1,41 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
-import AbHero1 from '../AboutHero/Images/Abhero1.jpeg';
-import AbHero2 from '../AboutHero/Images/Abhero2.jpeg';
-import AbHero3 from '../AboutHero/Images/AbHero3.jpeg';
-import AbHero4 from '../AboutHero/Images/AbHero4.jpeg';
-import AbHero5 from '../AboutHero/Images/AbHero5.jpeg';
-import AbHero6 from '../AboutHero/Images/AbHero6.jpeg';
+import Abhero1 from './Images/AbHero1.jpeg';
+import Abhero2 from './Images/AbHero2.jpeg';
+import Abhero3 from './Images/AbHero3.jpeg';
+import Abhero4 from './Images/AbHero4.jpeg';
+import Abhero5 from './Images/AbHero5.jpeg';
+import Abhero6 from './Images/AbHero6.jpeg';
 
 const slides = [
   {
-    image: AbHero1,
+    image: Abhero1,
     title: "About Gladys' Closet",
     subtitle: "Your premier fashion destination in Accra, delivering curated style, confidence, and quality directly to your doorstep.",
   },
   {
-    image: AbHero2,
+    image: Abhero2,
     title: "Welcome To Our Boutique",
     subtitle: "Step inside and explore handpicked outfits crafted to elevate your daily style.",
   },
   {
-    image: AbHero3,
+    image: Abhero3,
     title: "Elegance Redefined",
     subtitle: "Discover tailored designs and timeless fashion pieces built for every occasion.",
   },
   {
-    image: AbHero4,
+    image: Abhero4,
     title: "Fashion For Everyone",
     subtitle: "Bringing you modern trends and vibrant styles for both men and women.",
   },
   {
-    image: AbHero5,
+    image: Abhero5,
     title: "Curated Accessories",
     subtitle: "Complete your look with our exclusive collection of jewelry and handbags.",
   },
   {
-    image: AbHero6,
+    image: Abhero6,
     title: "Shop With Confidence",
     subtitle: "Join thousands of satisfied shoppers across Accra and beyond.",
   },
