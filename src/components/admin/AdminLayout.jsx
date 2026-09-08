@@ -50,6 +50,8 @@ export default function AdminLayout() {
           .from("orders")
           .select("*");
 
+        console.log("Raw orders from Supabase:", orders);
+
         if (ordersError) throw ordersError;
 
         let salesSum = 0;
@@ -57,7 +59,7 @@ export default function AdminLayout() {
         const monthlyMap = {};
         const statusMap = {};
 
-        orders.forEach((order) => {
+        (orders || []).forEach((order) => {
           // Check common column names for total amount
           const rawPrice = order.total_amount ?? order.total ?? order.total_price ?? order.amount ?? 0;
           
@@ -91,7 +93,7 @@ export default function AdminLayout() {
         }));
 
         setStats({
-          totalOrders: orders.length,
+          totalOrders: orders ? orders.length : 0,
           totalSales: salesSum,
           pendingOrders: pendingCount,
         });
