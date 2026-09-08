@@ -2,6 +2,9 @@ import React from 'react';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import AboutHero from '../../components/AboutHero/AboutHero';
+import AboutStats from '../../components/AboutStats/AboutStats';
+import AboutFaq from '../../components/AboutFaq/AboutFaq';
+import AboutCta from '../../components/AboutCta/AboutCta';
 import { FiMapPin, FiPhone, FiMail, FiCheckCircle } from 'react-icons/fi';
 
 export default function About() {
@@ -16,6 +19,7 @@ export default function About() {
       <Navbar />
       {/* Hero Section */}
      <AboutHero />
+     <AboutStats />
 
       {/* Story Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -57,7 +61,7 @@ export default function About() {
           </div>
         </div>
       </div>
-
+      <AboutFaq />
       {/* Location & Contact Info */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
         <div className="bg-purple-50 rounded-3xl p-8 sm:p-12 border border-purple-100 flex flex-col md:flex-row justify-between gap-8 items-center">
@@ -90,6 +94,7 @@ export default function About() {
         </div>
       </div>
 
+      <AboutCta />
       <Footer />
     </div>
   );
