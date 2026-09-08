@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { FiTrash2, FiPlus, FiMinus, FiArrowLeft, FiShoppingBag } from "react-icons/fi";
 import Navbar from "../../components/Navbar/Navbar";
+import Footer from "../../components/Footer/Footer";
 import { useCart } from "../../context/CartContext";
 
 export default function Cart({ onProceedToCheckout }) {
@@ -177,6 +178,8 @@ export default function Cart({ onProceedToCheckout }) {
           </div>
         )}
       </main>
+
+      <Footer />
     </div>
   );
 }

@@ -6,9 +6,13 @@ import {
   FiHeart, 
   FiMenu, 
   FiX, 
-  FiChevronDown 
+  FiChevronDown,
+  FiUser,
+  FiLogIn
 } from "react-icons/fi";
 import { useCart } from "../../context/CartContext";
+import { useAuth } from "../../context/AuthContext";
+import { supabase } from "../../lib/supabase";
 import logo from "../../assets/logo.png";
 
 export default function Navbar() {
@@ -18,6 +22,23 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Auth Context fallback directly to local state if context isn't fully set up
+  const auth = useAuth?.() || {};
+  const [user, setUser] = useState(auth.user || null);
+
+  useEffect(() => {
+    // Keep local user state synchronized with Supabase authentication state
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   // Sync initial input state with existing URL search query if present
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   
@@ -26,7 +47,6 @@ export default function Navbar() {
   // Favorites state count read from localStorage
   const [favoritesCount, setFavoritesCount] = useState(0);
 
-  // Read count from localStorage and update state
   const updateFavoritesCount = () => {
     const saved = localStorage.getItem("favorite_products");
     if (saved) {
@@ -44,7 +64,6 @@ export default function Navbar() {
   useEffect(() => {
     updateFavoritesCount();
 
-    // Listen for custom favorited changes across components or tabs
     window.addEventListener("favoritesUpdated", updateFavoritesCount);
     window.addEventListener("storage", updateFavoritesCount);
 
@@ -54,10 +73,8 @@ export default function Navbar() {
     };
   }, []);
 
-  // Total quantity of items in cart
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
-  // Keep input in sync if URL parameter changes elsewhere
   useEffect(() => {
     setSearchQuery(searchParams.get("search") || "");
   }, [searchParams]);
@@ -93,13 +110,12 @@ export default function Navbar() {
     },
     { name: "Sports", href: "/shop?category=sports" },
     { name: "Brands", href: "/shop?category=brands" },
-    { name: "New Arrivals", href: "/shop?sort=newest" },
+    { name: "New Arrivals", href: "/newarrivals?sort=newest" },
     { name: "About", href: "/about" },
     { name: "Shop", href: "/shop" },
     { name: "Contact", href: "/contact" },
   ];
 
-  // Check if a link is active based on current path and query string
   const isLinkActive = (href) => {
     const currentUrl = location.pathname + location.search;
     if (href === "/shop") {
@@ -108,7 +124,6 @@ export default function Navbar() {
     return currentUrl === href;
   };
 
-  // Execute Search Navigation
   const executeSearch = () => {
     if (searchQuery.trim()) {
       navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
@@ -127,6 +142,16 @@ export default function Navbar() {
     e.preventDefault();
     executeSearch();
   };
+
+  // Helper to extract avatar details: Google image or Name Initials
+  const userAvatar = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const userName = user?.user_metadata?.full_name || user?.email || "";
+  const userInitials = userName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase() || "U";
 
   return (
     <header className="w-full bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50 left-0 right-0">
@@ -178,7 +203,6 @@ export default function Navbar() {
                 }`}
               />
 
-              {/* Clear Search Button when filter is active */}
               {searchQuery && (
                 <button
                   type="button"
@@ -196,7 +220,7 @@ export default function Navbar() {
           </div>
 
           {/* Right Action Icons */}
-          <div className="flex items-center space-x-3 sm:space-x-6">
+          <div className="flex items-center space-x-3 sm:space-x-5">
 
             {/* Cart with Badge */}
             <Link to="/cart" className="flex flex-col items-center group relative">
@@ -236,16 +260,54 @@ export default function Navbar() {
               </span>
             </Link>
 
-            {/* User Avatar / Account */}
-            <Link to="/account" className="block pl-1 sm:pl-2">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop"
-                alt="User Profile"
-                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border transition ${
-                  location.pathname === "/account" ? "border-purple-600 ring-2 ring-purple-200" : "border-gray-200 hover:border-purple-500"
-                }`}
-              />
-            </Link>
+            {/* Authentication / User Profile Section */}
+            {user ? (
+              <Link to="/dashboard" className="flex flex-col items-center group">
+                {userAvatar ? (
+                  <img
+                    src={userAvatar}
+                    alt={userName}
+                    className={`w-8 h-8 rounded-full object-cover border transition ${
+                      location.pathname === "/dashboard"
+                        ? "border-purple-600 ring-2 ring-purple-200"
+                        : "border-gray-200 group-hover:border-purple-500"
+                    }`}
+                  />
+                ) : (
+                  <div
+                    className={`w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-xs border transition ${
+                      location.pathname === "/dashboard"
+                        ? "ring-2 ring-purple-200 border-purple-800"
+                        : "border-purple-600 group-hover:bg-purple-700"
+                    }`}
+                  >
+                    {userInitials}
+                  </div>
+                )}
+                <span className={`hidden sm:inline text-[11px] font-medium mt-1 ${
+                  location.pathname === "/dashboard" ? "text-purple-600 font-bold" : "text-gray-600"
+                }`}>
+                  Account
+                </span>
+              </Link>
+            ) : (
+              <div className="flex items-center gap-2 pl-1 border-l border-gray-200 sm:pl-3">
+                <Link
+                  to="/login"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-purple-600 px-2.5 py-1.5 rounded-lg hover:bg-gray-50 transition"
+                >
+                  <FiLogIn className="w-4 h-4 text-purple-600" />
+                  <span>Log In</span>
+                </Link>
+
+                <Link
+                  to="/signup"
+                  className="hidden sm:inline-flex text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 px-3.5 py-1.5 rounded-lg shadow-sm transition"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
 
           </div>
         </div>
@@ -327,6 +389,25 @@ export default function Navbar() {
         {/* Mobile Drawer Menu */}
         {mobileMenuOpen && (
           <nav className="md:hidden flex flex-col space-y-3 pt-4 pb-2 border-t border-gray-100 mt-3">
+            {!user && (
+              <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex-1 text-center py-2 text-xs font-semibold text-gray-700 bg-gray-100 rounded-lg"
+                >
+                  Log In
+                </Link>
+                <Link
+                  to="/signup"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex-1 text-center py-2 text-xs font-bold text-white bg-purple-600 rounded-lg"
+                >
+                  Create Account
+                </Link>
+              </div>
+            )}
+
             {categories.map((cat) => {
               const active = isLinkActive(cat.href);
               return (

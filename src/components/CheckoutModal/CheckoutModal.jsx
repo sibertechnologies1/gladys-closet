@@ -42,11 +42,15 @@ export default function CheckoutModal({ isOpen, onClose }) {
     const orderNumber = `GC-${Date.now()}`;
 
     try {
-      // 1. Save order to Supabase
+      // Get current authenticated user session
+      const { data: { session } } = await supabase.auth.getSession();
+
+      // 1. Save order to Supabase including user_id
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert([
           {
+            user_id: session?.user?.id || null, // Associates order with customer account
             order_number: orderNumber,
             customer_name: customer.name,
             customer_email: customer.email,
