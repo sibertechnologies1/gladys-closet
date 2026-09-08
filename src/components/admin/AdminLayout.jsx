@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { 
   FiGrid, 
   FiPackage, 
@@ -10,18 +10,96 @@ import {
   FiMenu, 
   FiX 
 } from "react-icons/fi";
+import { 
+  ResponsiveContainer, 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  CartesianGrid, 
+  BarChart, 
+  Bar 
+} from "recharts";
 import { useAuth } from "../../context/AuthContext";
+import { supabase } from "../../lib/supabaseClient";
 import logo from "../../pages/admin/logo.jpeg";
 
 export default function AdminLayout() {
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/admin/login");
-  };
+  // Dashboard Data State
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [stats, setStats] = useState({ totalOrders: 0, totalSales: 0, pendingOrders: 0 });
+  const [salesChartData, setSalesChartData] = useState([]);
+  const [statusChartData, setStatusChartData] = useState([]);
+
+  const isMainDashboard = location.pathname === "/admin" || location.pathname === "/admin/";
+
+  useEffect(() => {
+    if (!isMainDashboard) return;
+
+    async function fetchMetrics() {
+      try {
+        setLoading(true);
+        const { data: orders, error: ordersError } = await supabase
+          .from("orders")
+          .select("*");
+
+        if (ordersError) throw ordersError;
+
+        let salesSum = 0;
+        let pendingCount = 0;
+        const monthlyMap = {};
+        const statusMap = {};
+
+        orders.forEach((order) => {
+          const total = Number(order.total_amount || order.total || 0);
+          salesSum += total;
+
+          if (order.status?.toLowerCase() === "pending") {
+            pendingCount += 1;
+          }
+
+          const status = order.status || "Pending";
+          statusMap[status] = (statusMap[status] || 0) + 1;
+
+          const date = new Date(order.created_at);
+          const monthLabel = date.toLocaleString("default", { month: "short", year: "2-digit" });
+          monthlyMap[monthLabel] = (monthlyMap[monthLabel] || 0) + total;
+        });
+
+        const formattedSalesData = Object.keys(monthlyMap).map((key) => ({
+          month: key,
+          sales: monthlyMap[key],
+        }));
+
+        const formattedStatusData = Object.keys(statusMap).map((key) => ({
+          status: key,
+          count: statusMap[key],
+        }));
+
+        setStats({
+          totalOrders: orders.length,
+          totalSales: salesSum,
+          pendingOrders: pendingCount,
+        });
+        setSalesChartData(formattedSalesData);
+        setStatusChartData(formattedStatusData);
+      } catch (err) {
+        console.error("Error fetching dashboard metrics:", err);
+        setError("Couldn't load dashboard data. Check your Supabase connection.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchMetrics();
+  }, [isMainDashboard]);
 
   const navItems = [
     { name: "Dashboard", path: "/admin", icon: FiGrid, end: true },
@@ -69,14 +147,13 @@ export default function AdminLayout() {
         />
       )}
 
-      {/* Responsive Sidebar (Slide-over on Mobile, Sticky on Desktop) */}
+      {/* Responsive Sidebar */}
       <aside 
         className={`fixed md:sticky top-0 left-0 z-50 md:z-auto w-64 bg-white border-r border-gray-100 flex flex-col justify-between p-5 h-screen shadow-lg md:shadow-sm transition-transform duration-300 ease-in-out ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
         <div className="space-y-6">
-          {/* Brand Header */}
           <div className="flex items-center justify-between px-2 pt-2 pb-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
               <div className="p-1 bg-gray-900 rounded-xl shadow-sm shrink-0">
@@ -96,7 +173,6 @@ export default function AdminLayout() {
               </div>
             </div>
 
-            {/* Close Button Inside Mobile Drawer */}
             <button 
               onClick={() => setIsMobileMenuOpen(false)}
               className="md:hidden text-gray-400 hover:text-gray-600"
@@ -105,7 +181,6 @@ export default function AdminLayout() {
             </button>
           </div>
 
-          {/* Navigation Links */}
           <nav className="space-y-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -131,7 +206,6 @@ export default function AdminLayout() {
           </nav>
         </div>
 
-        {/* Footer Actions */}
         <div className="space-y-2 pt-4 border-t border-gray-100">
           <Link
             to="/"
@@ -146,7 +220,7 @@ export default function AdminLayout() {
           <button
             onClick={() => {
               setIsMobileMenuOpen(false);
-              handleSignOut();
+              signOut().then(() => navigate("/admin/login"));
             }}
             className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-xl transition w-full text-left"
           >
@@ -158,8 +232,97 @@ export default function AdminLayout() {
 
       {/* Main Content Area */}
       <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
-        <div className="max-w-7xl mx-auto">
-          <Outlet />
+        <div className="max-w-7xl mx-auto space-y-8">
+          {isMainDashboard ? (
+            <>
+              <div>
+                <h1 className="text-2xl font-black text-gray-900 tracking-tight">Dashboard</h1>
+                <p className="text-sm text-gray-500 mt-1">
+                  A snapshot of store sales, orders, and fulfillment activity.
+                </p>
+              </div>
+
+              {error && (
+                <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium">
+                  {error}
+                </div>
+              )}
+
+              {loading ? (
+                <div className="p-8 text-center text-gray-400 font-semibold text-sm">
+                  Loading analytical data...
+                </div>
+              ) : (
+                <>
+                  {/* Summary Metric Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Orders</p>
+                      <p className="text-3xl font-black text-gray-900 mt-2">{stats.totalOrders}</p>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Sales</p>
+                      <p className="text-3xl font-black text-purple-700 mt-2">
+                        GHS {stats.totalSales.toLocaleString()}
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pending Orders</p>
+                      <p className="text-3xl font-black text-amber-600 mt-2">{stats.pendingOrders}</p>
+                    </div>
+                  </div>
+
+                  {/* Visual Analytics Graphs */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Line Chart */}
+                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                      <h3 className="text-sm font-bold text-gray-900 mb-4">Revenue Trend</h3>
+                      <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={salesChartData}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis dataKey="month" stroke="#94a3b8" fontSize={12} tickLine={false} />
+                            <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} />
+                            <Tooltip 
+                              formatter={(val) => [`GHS ${val.toLocaleString()}`, "Sales"]}
+                              contentStyle={{ borderRadius: "12px", border: "1px solid #f1f5f9" }}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="sales" 
+                              stroke="#7e22ce" 
+                              strokeWidth={3} 
+                              dot={{ r: 4, fill: "#7e22ce" }} 
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Bar Chart */}
+                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                      <h3 className="text-sm font-bold text-gray-900 mb-4">Order Status Breakdown</h3>
+                      <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={statusChartData}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis dataKey="status" stroke="#94a3b8" fontSize={12} tickLine={false} />
+                            <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} allowDecimals={false} />
+                            <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #f1f5f9" }} />
+                            <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </>
+          ) : (
+            <Outlet />
+          )}
         </div>
       </main>
     </div>
