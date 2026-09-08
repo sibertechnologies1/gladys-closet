@@ -58,8 +58,15 @@ export default function AdminLayout() {
         const statusMap = {};
 
         orders.forEach((order) => {
-          const total = Number(order.total_amount || order.total || 0);
-          salesSum += total;
+          // Check common column names for total amount
+          const rawPrice = order.total_amount ?? order.total ?? order.total_price ?? order.amount ?? 0;
+          
+          // Parse numeric value if stored as a string or formatted currency
+          const cleanedPrice = typeof rawPrice === "string" 
+            ? parseFloat(rawPrice.replace(/[^0-9.]/g, "")) || 0 
+            : Number(rawPrice) || 0;
+
+          salesSum += cleanedPrice;
 
           if (order.status?.toLowerCase() === "pending") {
             pendingCount += 1;
@@ -68,9 +75,9 @@ export default function AdminLayout() {
           const status = order.status || "Pending";
           statusMap[status] = (statusMap[status] || 0) + 1;
 
-          const date = new Date(order.created_at);
+          const date = new Date(order.created_at || Date.now());
           const monthLabel = date.toLocaleString("default", { month: "short", year: "2-digit" });
-          monthlyMap[monthLabel] = (monthlyMap[monthLabel] || 0) + total;
+          monthlyMap[monthLabel] = (monthlyMap[monthLabel] || 0) + cleanedPrice;
         });
 
         const formattedSalesData = Object.keys(monthlyMap).map((key) => ({
