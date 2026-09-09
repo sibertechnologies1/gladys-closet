@@ -7,7 +7,6 @@ import {
   FiMenu, 
   FiX, 
   FiChevronDown,
-  FiUser,
   FiLogIn
 } from "react-icons/fi";
 import { useCart } from "../../context/CartContext";
@@ -73,7 +72,9 @@ export default function Navbar() {
     };
   }, []);
 
-  const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
+  // Compute displayed counts (resetting to 0 when logged out)
+  const cartItemCount = user ? cart.reduce((total, item) => total + item.quantity, 0) : 0;
+  const displayedFavoritesCount = user ? favoritesCount : 0;
 
   useEffect(() => {
     setSearchQuery(searchParams.get("search") || "");
@@ -247,9 +248,9 @@ export default function Navbar() {
                 <FiHeart className={`w-5 h-5 transition ${
                   location.pathname === "/favorites" ? "text-purple-600" : "text-gray-700 group-hover:text-purple-600"
                 }`} />
-                {favoritesCount > 0 && (
+                {displayedFavoritesCount > 0 && (
                   <span className="absolute -top-1.5 -right-2 bg-pink-500 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
-                    {favoritesCount}
+                    {displayedFavoritesCount}
                   </span>
                 )}
               </div>
