@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { FcGoogle } from 'react-icons/fc';
+import logo from '../logo.png';
 
 export default function Signup() {
   const [fullName, setFullName] = useState('');
@@ -48,7 +49,14 @@ export default function Signup() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-lg max-w-md w-full space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-black text-brand-navy">Create an Account</h1>
+         
+            <img 
+              src={logo} 
+              alt="Gladys Closet Logo" 
+              className="h-16 w-auto mx-auto object-contain rounded-full shadow-sm cursor-pointer"
+            />
+          
+          
           <p className="text-sm text-gray-500 mt-1">Join Gladys' Closet for personalized shopping</p>
         </div>
 
@@ -82,7 +90,7 @@ export default function Signup() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               className="w-full p-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-brand-purple"
-              placeholder="Jane Doe"
+              placeholder="Gladys Closet"
             />
           </div>
 
