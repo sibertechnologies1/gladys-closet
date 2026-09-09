@@ -22,6 +22,7 @@ export default function Signup() {
       password,
       options: {
         data: { full_name: fullName },
+        emailRedirectTo: `${window.location.origin}/shop`,
       },
     });
 
@@ -49,14 +50,11 @@ export default function Signup() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-lg max-w-md w-full space-y-6">
         <div className="text-center">
-         
-            <img 
-              src={logo} 
-              alt="Gladys Closet Logo" 
-              className="h-16 w-auto mx-auto object-contain rounded-full shadow-sm cursor-pointer"
-            />
-          
-          
+          <img 
+            src={logo} 
+            alt="Gladys Closet Logo" 
+            className="h-16 w-auto mx-auto object-contain rounded-full shadow-sm cursor-pointer"
+          />
           <p className="text-sm text-gray-500 mt-1">Join Gladys' Closet for personalized shopping</p>
         </div>
 
