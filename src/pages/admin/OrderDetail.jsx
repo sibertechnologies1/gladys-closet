@@ -88,7 +88,7 @@ export default function OrderDetail() {
               onClick={() => handleStatusChange(status)}
               className={`rounded-full px-3 py-1.5 text-sm font-medium capitalize transition-colors disabled:opacity-60 ${
                 order.status === status
-                  ? "bg-plum text-white"
+                  ? "bg-plum text-purple-600"
                   : "bg-canvas text-muted hover:bg-line"
               }`}
             >

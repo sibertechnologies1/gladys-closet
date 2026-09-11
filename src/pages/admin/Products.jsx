@@ -100,7 +100,7 @@ export default function Products() {
               <th className="px-4 py-3 font-medium">Category</th>
               <th className="px-4 py-3 font-medium">Price</th>
               <th className="px-4 py-3 font-medium">Stock</th>
-              <th className="px-4 py-3 font-medium"></th>
+              <th className="px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
 
