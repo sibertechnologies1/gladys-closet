@@ -11,20 +11,24 @@ import NewArrivals from './pages/NewArrivals/NewArrivals';
 import Favorites from './pages/Favorites/Favorites';
 import Login from './pages/Login/Login';
 import Signup from './pages/Signup/Signup';
+
+// Customer Dashboard
 import CustomerDashboard from './pages/Dashboard/Dashboard';
 
-// Admin Pages (Aliased to prevent naming collisions)
-import AdminDashboard from './pages/admin/Dashboard';
-import AdminLogin from './pages/admin/Login';
+// Admin Pages
+import Dashoard from './pages/admin/Dashboard';
+import AdminLogin from './pages/admin/AdminLogin';
 import Products from './pages/admin/Products';
 import ProductForm from './pages/admin/ProductForm';
 import Orders from './pages/admin/Orders';
 import OrderDetail from './pages/admin/OrderDetail';
 
+// Admin Dashboard & Layout Component
+import AdminLayout from './components/admin/AdminLayout';
+
 // Components & Context
 import CartDrawer from './components/CartDrawer/CartDrawer';
 import CheckoutModal from './components/CheckoutModal/CheckoutModal';
-import AdminLayout from './components/admin/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
@@ -42,44 +46,17 @@ function App() {
         <div>
           <Routes>
             {/* Storefront Routes */}
-            <Route 
-              path="/" 
-              element={<Home onProceedToCheckout={handleOpenCheckout} />} 
-            />
-            <Route 
-              path="/about" 
-              element={<About />} 
-            />
-            <Route 
-              path="/shop" 
-              element={<Shop />} 
-            />
-            <Route 
-              path="/newarrivals" 
-              element={<NewArrivals />} 
-            />
-            <Route 
-              path="/cart" 
-              element={<Cart onProceedToCheckout={handleOpenCheckout} />} 
-            />
-            <Route 
-              path="/favorites" 
-              element={<Favorites />} 
-            />
-            <Route 
-              path="/contact" 
-              element={<Contact />} 
-            />
+            <Route path="/" element={<Home onProceedToCheckout={handleOpenCheckout} />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/newarrivals" element={<NewArrivals />} />
+            <Route path="/cart" element={<Cart onProceedToCheckout={handleOpenCheckout} />} />
+            <Route path="/favorites" element={<Favorites />} />
+            <Route path="/contact" element={<Contact />} />
 
-            {/* Customer Authentication & Dashboard Routes */}
-            <Route 
-              path="/login" 
-              element={<Login />} 
-            />
-            <Route 
-              path="/signup" 
-              element={<Signup />} 
-            />
+            {/* Customer Authentication & Dashboard */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
             <Route 
               path="/dashboard" 
               element={
@@ -89,22 +66,15 @@ function App() {
               } 
             />
 
-            {/* Public Admin Route */}
-            <Route 
-              path="/admin/login" 
-              element={<AdminLogin />} 
-            />
+            {/* Public Admin Login Route */}
+          <Route path="/admin/AdminLogin" element={<AdminLogin />} />
+          
 
             {/* Protected Admin Routes */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute requireAdmin={true}>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<AdminDashboard />} />
+           <Route path="/admindashboard" element={<AdminLayout />}>
+
+              <Route index element={<Dashoard />} />
+              <Route path="dashboard" element={<Dashoard />} />
               <Route path="products" element={<Products />} />
               <Route path="products/new" element={<ProductForm />} />
               <Route path="products/:id" element={<ProductForm />} />
