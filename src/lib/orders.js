@@ -1,4 +1,3 @@
-
 import { supabase } from "./supabase";
 
 const TABLE = "orders";
@@ -229,3 +228,35 @@ export async function getMonthlyPendingOrders() {
   }));
 }
 
+/*
+  Create a new order and decrement stock for each purchased product.
+*/
+export async function createOrder(orderDetails, cartItems) {
+  // 1. Insert order details into the orders table
+  const { data: order, error: orderError } = await supabase
+    .from(TABLE)
+    .insert([orderDetails])
+    .select()
+    .single();
+
+  if (orderError) throw orderError;
+
+  // 2. Loop through cart items and reduce stock count for each product
+  for (const item of cartItems) {
+    const newStock = (item.stock || 0) - item.quantity;
+
+    const { error: updateError } = await supabase
+      .from("products")
+      .update({ stock: newStock < 0 ? 0 : newStock })
+      .eq("id", item.id);
+
+    if (updateError) {
+      console.error(
+        `Failed to update stock for product ${item.id}:`,
+        updateError
+      );
+    }
+  }
+
+  return order;
+}

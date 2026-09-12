@@ -57,6 +57,8 @@ export default function AdminLayout() {
     { name: "Add Product", path: "/admindashboard/products/new", icon: FiPlusCircle, end: false },
 
     { name: "Orders", path: "/admindashboard/orders", icon: FiShoppingBag, end: false },
+    
+    { name: "Content Manager", path: '/admindashboard/content', icon: FiGrid, end: true },
 
   ];
 

@@ -22,6 +22,7 @@ import Products from './pages/admin/Products';
 import ProductForm from './pages/admin/ProductForm';
 import Orders from './pages/admin/Orders';
 import OrderDetail from './pages/admin/OrderDetail';
+import ContentManager from './pages/admin/ContentManager';
 
 // Admin Dashboard & Layout Component
 import AdminLayout from './components/admin/AdminLayout';
@@ -80,6 +81,7 @@ function App() {
               <Route path="products/:id" element={<ProductForm />} />
               <Route path="orders" element={<Orders />} />
               <Route path="orders/:id" element={<OrderDetail />} />
+              <Route path="content" element={<ContentManager />} />
             </Route>
           </Routes>
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { getSiteContent } from '../../lib/content';
 
 import img1 from './Images/Abhero1.jpeg';
 import img2 from './Images/Abhero2.jpeg';
@@ -8,7 +9,7 @@ import img4 from './Images/Abhero4.jpeg';
 import img5 from './Images/Abhero5.jpeg';
 import img6 from './Images/Abhero6.jpeg';
 
-const slides = [
+const defaultSlides = [
   {
     image: img1,
     title: "About Gladys' Closet",
@@ -42,15 +43,33 @@ const slides = [
 ];
 
 export default function AboutHero() {
+  const [slides, setSlides] = useState(defaultSlides);
   const [current, setCurrent] = useState(0);
+
+  // Fetch dynamic slides from Supabase
+  useEffect(() => {
+    getSiteContent().then((data) => {
+      if (data.about_hero_slides) {
+        try {
+          const parsed = JSON.parse(data.about_hero_slides);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setSlides(parsed);
+          }
+        } catch (e) {
+          console.error('Error parsing about_hero_slides JSON:', e);
+        }
+      }
+    });
+  }, []);
 
   // Auto-play interval (5 seconds)
   useEffect(() => {
+    if (slides.length === 0) return;
     const timer = setInterval(() => {
       setCurrent((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
   const prevSlide = () => {
     setCurrent((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
@@ -59,6 +78,8 @@ export default function AboutHero() {
   const nextSlide = () => {
     setCurrent((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
   };
+
+  if (slides.length === 0) return null;
 
   return (
     <div className="relative w-full h-[450px] sm:h-[550px] overflow-hidden bg-gray-900">
@@ -73,7 +94,7 @@ export default function AboutHero() {
           {/* Background Image */}
           <img
             src={slide.image}
-            alt={slide.title}
+            alt={slide.title || 'About Banner'}
             className="w-full h-full object-cover object-center"
           />
 

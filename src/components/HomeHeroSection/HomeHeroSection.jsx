@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { getSiteContent } from "../../lib/content";
+
 import hero1 from "./Images/hero1.jpg";
 import hero2 from "./Images/hero2.jpg";
 import hero3 from "./Images/hero3.jpg";
@@ -9,7 +11,7 @@ import hero5 from "./Images/hero5.jpg";
 import hero6 from "./Images/hero6.jpg";
 import hero7 from "./Images/hero7.jpg";
 
-const slides = [
+const defaultSlides = [
   {
     id: 1,
     image: hero1,
@@ -69,23 +71,43 @@ const slides = [
 ];
 
 export default function HomeHeroSection() {
+  const [slides, setSlides] = useState(defaultSlides);
   const [current, setCurrent] = useState(0);
+
+  // Fetch dynamic slides from Supabase
+  useEffect(() => {
+    getSiteContent().then((data) => {
+      if (data.home_hero_slides) {
+        try {
+          const parsed = JSON.parse(data.home_hero_slides);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setSlides(parsed);
+          }
+        } catch (e) {
+          console.error("Error parsing home_hero_slides JSON:", e);
+        }
+      }
+    });
+  }, []);
 
   // Preload all slide images into browser cache immediately
   useEffect(() => {
     slides.forEach((slide) => {
-      const img = new Image();
-      img.src = slide.image;
+      if (slide.image) {
+        const img = new Image();
+        img.src = slide.image;
+      }
     });
-  }, []);
+  }, [slides]);
 
   // Autoplay timer
   useEffect(() => {
+    if (slides.length === 0) return;
     const timer = setInterval(() => {
       setCurrent((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
   const handleNext = () => {
     setCurrent((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
@@ -95,11 +117,15 @@ export default function HomeHeroSection() {
     setCurrent((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
   };
 
+  if (slides.length === 0) return null;
+
+  const currentSlide = slides[current] || slides[0];
+
   return (
     <section className="relative w-full h-[80vh] min-h-[550px] bg-gray-900 overflow-hidden">
       <AnimatePresence mode="wait">
         <motion.div
-          key={slides[current].id}
+          key={currentSlide.id || current}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -108,8 +134,8 @@ export default function HomeHeroSection() {
         >
           {/* Background Image */}
           <img
-            src={slides[current].image}
-            alt={slides[current].title}
+            src={currentSlide.image}
+            alt={currentSlide.title || "Home Banner"}
             className="w-full h-full object-cover object-center"
           />
 
@@ -124,20 +150,28 @@ export default function HomeHeroSection() {
               transition={{ delay: 0.2, duration: 0.5 }}
               className="max-w-xl space-y-4"
             >
-              <span className="inline-block text-amber-300 text-xs font-bold uppercase tracking-widest bg-amber-400/10 px-3 py-1 rounded-full border border-amber-300/20">
-                {slides[current].subtitle}
-              </span>
-              <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
-                {slides[current].title}
-              </h1>
-              <p className="text-sm md:text-base text-gray-200 leading-relaxed">
-                {slides[current].description}
-              </p>
-              <div className="pt-2">
-                <button className="bg-amber-300 hover:bg-amber-400 text-gray-900 font-bold px-7 py-3 rounded-lg text-sm transition-all transform hover:-translate-y-0.5 shadow-lg">
-                  {slides[current].cta}
-                </button>
-              </div>
+              {currentSlide.subtitle && (
+                <span className="inline-block text-amber-300 text-xs font-bold uppercase tracking-widest bg-amber-400/10 px-3 py-1 rounded-full border border-amber-300/20">
+                  {currentSlide.subtitle}
+                </span>
+              )}
+              {currentSlide.title && (
+                <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
+                  {currentSlide.title}
+                </h1>
+              )}
+              {(currentSlide.description || currentSlide.subtitle) && (
+                <p className="text-sm md:text-base text-gray-200 leading-relaxed">
+                  {currentSlide.description}
+                </p>
+              )}
+              {currentSlide.cta && (
+                <div className="pt-2">
+                  <button className="bg-amber-300 hover:bg-amber-400 text-gray-900 font-bold px-7 py-3 rounded-lg text-sm transition-all transform hover:-translate-y-0.5 shadow-lg">
+                    {currentSlide.cta}
+                  </button>
+                </div>
+              )}
             </motion.div>
           </div>
         </motion.div>

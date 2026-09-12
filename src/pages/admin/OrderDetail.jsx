@@ -35,7 +35,7 @@ export default function OrderDetail() {
 
   return (
     <div className="max-w-2xl">
-      <Link to="/admin/orders" className="text-sm font-medium text-plum hover:underline">
+      <Link to="/admindashboard/orders" className="text-sm font-medium text-plum hover:underline">
         ← Back to orders
       </Link>
 
