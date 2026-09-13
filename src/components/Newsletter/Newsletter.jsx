@@ -1,10 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 
 export default function Newsletter() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
   const [message, setMessage] = useState('');
+
+  // Auto-fill input with logged-in user's email if available
+  useEffect(() => {
+    async function getAuthenticatedUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setEmail(user.email);
+      }
+    }
+    getAuthenticatedUser();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -14,22 +25,33 @@ export default function Newsletter() {
     setMessage('');
 
     try {
-      const { error } = await supabase
+      // 1. Insert into Supabase table
+      const { error: dbError } = await supabase
         .from('subscribers')
         .insert([{ email }]);
 
-      if (error) {
-        if (error.code === '23505') { // Unique constraint violation
+      if (dbError) {
+        if (dbError.code === '23505') { // Unique constraint violation
           setMessage("You're already subscribed!");
         } else {
           setMessage("Something went wrong. Please try again.");
         }
         setStatus('error');
-      } else {
-        setStatus('success');
-        setMessage("Thank you for subscribing! Check your inbox soon.");
-        setEmail('');
+        return;
       }
+
+      // 2. Trigger automated welcome email via Edge Function
+      const { error: fnError } = await supabase.functions.invoke('send-welcome-email', {
+        body: { email }
+      });
+
+      if (fnError) {
+        console.error('Email dispatch failed:', fnError);
+      }
+
+      setStatus('success');
+      setMessage("Thank you for subscribing! Check your inbox soon.");
+      setEmail('');
     } catch (err) {
       console.error(err);
       setStatus('error');
