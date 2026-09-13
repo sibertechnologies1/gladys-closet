@@ -1,15 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiMapPin, FiPhone, FiMail, FiClock, FiSend, FiCheckCircle } from 'react-icons/fi';
+import { supabase } from '../../lib/supabase';
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
+  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (e) => {
+  // Auto-fill email if user is logged in
+  useEffect(() => {
+    async function loadUserData() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setFormData((prev) => ({ ...prev, email: user.email }));
+      }
+    }
+    loadUserData();
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 4000);
-    setFormData({ name: '', email: '', phone: '', message: '' });
+    setLoading(true);
+    setErrorMessage('');
+
+    try {
+      // 1. Save submission to Supabase
+      const { error: dbError } = await supabase
+        .from('contact_messages')
+        .insert([
+          {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone || null,
+            message: formData.message,
+          },
+        ]);
+
+      if (dbError) throw dbError;
+
+      // 2. Trigger notification function (Optional)
+      await supabase.functions.invoke('send-contact-notification', {
+        body: formData,
+      });
+
+      setSubmitted(true);
+      setFormData({ name: '', email: '', phone: '', message: '' });
+    } catch (err) {
+      console.error('Error submitting message:', err);
+      setErrorMessage(err.message || 'Failed to send message. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -66,7 +108,7 @@ export default function ContactForm() {
               </div>
               <div>
                 <h3 className="font-bold text-gray-900 text-sm">Working Hours</h3>
-                <p className="text-gray-600 text-xs mt-1">Mon - Sat: 8:00 AM - 7:00 PM</p>
+                <p className="text-gray-600 text-xs mt-1">Mon - Sun: 24/7</p>
               </div>
             </div>
           </div>
@@ -76,6 +118,12 @@ export default function ContactForm() {
         <div className="lg:col-span-2 bg-white p-6 sm:p-10 rounded-3xl border border-gray-100 shadow-sm">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Send Us a Message</h2>
 
+          {errorMessage && (
+            <div className="mb-4 p-3 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200">
+              {errorMessage}
+            </div>
+          )}
+
           {submitted ? (
             <div className="bg-green-50 border border-green-100 text-green-800 p-6 rounded-2xl text-center space-y-2">
               <FiCheckCircle className="w-10 h-10 text-green-600 mx-auto" />
@@ -83,6 +131,12 @@ export default function ContactForm() {
               <p className="text-xs text-green-700">
                 Thank you for reaching out. A team member will get back to you shortly.
               </p>
+              <button
+                onClick={() => setSubmitted(false)}
+                className="mt-4 text-xs font-semibold text-purple-600 underline"
+              >
+                Send another message
+              </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -96,7 +150,7 @@ export default function ContactForm() {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="John Doe"
+                    placeholder="Gladys Closet"
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-purple-600"
                   />
                 </div>
@@ -109,7 +163,7 @@ export default function ContactForm() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="john@example.com"
+                    placeholder="example@gmail.com"
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-purple-600"
                   />
                 </div>
@@ -144,9 +198,10 @@ export default function ContactForm() {
 
               <button
                 type="submit"
-                className="w-full bg-purple-600 text-white font-bold py-4 rounded-xl shadow-md hover:bg-purple-700 transition flex items-center justify-center gap-2"
+                disabled={loading}
+                className="w-full bg-purple-600 text-white font-bold py-4 rounded-xl shadow-md hover:bg-purple-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <FiSend className="w-4 h-4" /> Send Message
+                <FiSend className="w-4 h-4" /> {loading ? 'Sending...' : 'Send Message'}
               </button>
             </form>
           )}

@@ -23,6 +23,7 @@ import {
 } from "react-icons/fi";
 
 import {  FaUsers, FaThumbsUp} from "react-icons/fa"
+import {MessageSquareText} from "lucide-react"
 
 import { useAuth } from "../../context/AuthContext";
 
@@ -65,6 +66,9 @@ export default function AdminLayout() {
    { name: "Review Manager", path: '/admindashboard/reviews', icon: FaUsers, end: true },
 
     { name: "Subscribe Manager", path: '/admindashboard/subscribe', icon: FaThumbsUp, end: true },
+    
+    { name: "Message Manager", path: '/admindashboard/message', icon: MessageSquareText, end: true },
+    
   ];
 
 
