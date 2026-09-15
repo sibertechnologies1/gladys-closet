@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiLock } from 'react-icons/fi';
 import { useCart } from '../../context/CartContext';
@@ -6,6 +7,7 @@ import { supabase } from '../../lib/supabase';
 
 export default function CheckoutModal({ isOpen, onClose }) {
   const { cart, totalPesewas, clearCart } = useCart();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [customer, setCustomer] = useState({
     name: '',
@@ -31,7 +33,6 @@ export default function CheckoutModal({ isOpen, onClose }) {
     setCustomer({ ...customer, [e.target.name]: e.target.value });
   };
 
-  // Separate post-payment execution handler
   const handlePaymentSuccess = async (response, orderNumber, orderId) => {
     try {
       // 1. Update order status in Supabase database
@@ -67,10 +68,21 @@ export default function CheckoutModal({ isOpen, onClose }) {
         }),
       });
 
+      // 4. Save order ID locally for guest account registration flow
+      sessionStorage.setItem('last_order_id', orderId);
+
       clearCart();
       setLoading(false);
       onClose();
-      alert('Payment Successful! Your order confirmation email is on its way.');
+
+      // 5. Navigate to confirmation page passing order details
+      navigate('/order-success', {
+        state: {
+          orderId,
+          orderNumber,
+          customerEmail: customer.email,
+        },
+      });
     } catch (err) {
       console.error('Post-payment execution error:', err);
       alert('Payment received, but failed to dispatch the receipt email automatically.');
@@ -89,14 +101,16 @@ export default function CheckoutModal({ isOpen, onClose }) {
     const orderNumber = `GC-${Date.now()}`;
 
     try {
+      // Fetch session safely; proceeds with null if user is a guest
       const { data: { session } } = await supabase.auth.getSession();
+      const currentUserId = session?.user?.id || null;
 
       // Save pending order to Supabase
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert([
           {
-            user_id: session?.user?.id || null,
+            user_id: currentUserId,
             order_number: orderNumber,
             customer_name: customer.name,
             customer_email: customer.email,
@@ -118,7 +132,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
         throw new Error('Paystack SDK failed to load. Check your internet connection.');
       }
 
-      // Initialize Paystack Popup with standard sync callback function
+      // Initialize Paystack Popup
       const handler = window.PaystackPop.setup({
         key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
         email: customer.email,
@@ -227,7 +241,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
             <div className="p-4 rounded-xl bg-brand-lightPurple flex justify-between items-center my-2">
               <span className="text-sm font-bold text-brand-purple">Total Amount Due</span>
               <span className="text-xl font-black text-brand-navy">
-                GHS {(totalPesewas / 100).toFixed(2)}
+                GH₵ {(totalPesewas / 100).toFixed(2)}
               </span>
             </div>
 

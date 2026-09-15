@@ -9,6 +9,7 @@ import Shop from './pages/Shop/Shop';
 import Cart from './pages/Cart/Cart';
 import NewArrivals from './pages/NewArrivals/NewArrivals';
 import Favorites from './pages/Favorites/Favorites';
+import OrderSuccess from './pages/OrderSuccess/OrderSuccess';
 import Login from './pages/Login/Login';
 import Signup from './pages/Signup/Signup';
 
@@ -57,6 +58,7 @@ function App() {
             <Route path="/cart" element={<Cart onProceedToCheckout={handleOpenCheckout} />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/order-success" element={<OrderSuccess />} />
 
             {/* Customer Authentication & Dashboard */}
             <Route path="/login" element={<Login />} />

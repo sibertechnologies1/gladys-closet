@@ -16,28 +16,37 @@ export default function Shop() {
   const [loading, setLoading] = useState(true);
   const [addedId, setAddedId] = useState(null);
 
-  // Favorites State
+  // Guest-Friendly Favorites State initialized from LocalStorage
   const [favorites, setFavorites] = useState(() => {
-    const saved = localStorage.getItem('favorite_products');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('favorite_products');
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.error('Error loading favorites from localStorage:', error);
+      return [];
+    }
   });
 
-  // Toggle Favorite, Persist to LocalStorage, and Notify Navbar
+  // Toggle Favorite for both Guests and Logged-in Users
   const toggleFavorite = (productId, e) => {
     if (e) e.stopPropagation();
     
-    const saved = localStorage.getItem('favorite_products');
-    const currentFavorites = saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('favorite_products');
+      const currentFavorites = saved ? JSON.parse(saved) : [];
 
-    const updatedFavorites = currentFavorites.includes(productId)
-      ? currentFavorites.filter((id) => id !== productId)
-      : [...currentFavorites, productId];
+      const updatedFavorites = currentFavorites.includes(productId)
+        ? currentFavorites.filter((id) => id !== productId)
+        : [...currentFavorites, productId];
 
-    setFavorites(updatedFavorites);
-    localStorage.setItem('favorite_products', JSON.stringify(updatedFavorites));
+      setFavorites(updatedFavorites);
+      localStorage.setItem('favorite_products', JSON.stringify(updatedFavorites));
 
-    // Notify Navbar to update badge count immediately
-    window.dispatchEvent(new Event("favoritesUpdated"));
+      // Notify Navbar to update badge count immediately
+      window.dispatchEvent(new Event("favoritesUpdated"));
+    } catch (error) {
+      console.error('Error updating favorites:', error);
+    }
   };
 
   // Active Filter States
@@ -48,6 +57,24 @@ export default function Shop() {
 
   useEffect(() => {
     fetchProducts();
+
+    // Supabase Realtime Listener for Live Stock and Product Updates
+    const productChannel = supabase
+      .channel('public:products')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'products' },
+        (payload) => {
+          setProducts((prevProducts) =>
+            prevProducts.map((item) => (item.id === payload.new.id ? payload.new : item))
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(productChannel);
+    };
   }, [selectedAudience, searchQuery, sortBy]);
 
   const fetchProducts = async () => {
@@ -112,6 +139,7 @@ export default function Shop() {
     setSearchParams(newParams);
   };
 
+  // Guest & Member Add to Cart
   const handleAddToCart = (product, e) => {
     if (e) e.stopPropagation();
 
@@ -198,7 +226,7 @@ export default function Shop() {
                   Max Price
                 </h3>
                 <span className="text-sm font-bold text-purple-600">
-                  GHS {maxPrice}
+                  GH₵ {maxPrice}
                 </span>
               </div>
               <input
@@ -268,11 +296,19 @@ export default function Shop() {
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                         />
-                        {product.is_new && (
-                          <span className="absolute top-3 left-3 bg-pink-500 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
-                            New
-                          </span>
-                        )}
+                        
+                        <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
+                          {product.is_new && (
+                            <span className="bg-pink-500 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
+                              New
+                            </span>
+                          )}
+                          {product.stock > 0 && product.stock <= 3 && (
+                            <span className="bg-red-500 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md animate-pulse">
+                              Only {product.stock} Left!
+                            </span>
+                          )}
+                        </div>
 
                         <button
                           type="button"
@@ -305,7 +341,7 @@ export default function Shop() {
                           <div>
                             <span className="text-xs text-gray-400 block">Price</span>
                             <span className="text-lg font-black text-gray-900">
-                              GHS {Number(displayPrice).toFixed(2)}
+                              GH₵ {Number(displayPrice).toFixed(2)}
                             </span>
                           </div>
 
