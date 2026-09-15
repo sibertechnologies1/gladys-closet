@@ -35,7 +35,7 @@ serve(async (req) => {
         <tr>
           <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name}</td>
           <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">$${item.price.toFixed(2)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">GH₵ ${item.price.toFixed(2)}</td>
         </tr>
       `
       )
@@ -68,7 +68,7 @@ serve(async (req) => {
           </table>
 
           <div style="text-align: right; margin-top: 15px;">
-            <h3>Total Paid: <span style="color: #7c3aed;">$${totalAmount.toFixed(2)}</span></h3>
+            <h3>Total Paid: <span style="color: #7c3aed;">GH₵ ${totalAmount.toFixed(2)}</span></h3>
           </div>
 
           <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
