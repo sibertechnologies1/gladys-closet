@@ -3,7 +3,7 @@
  * rounding errors. These helpers convert at the display boundary only.
  */
 
-export function formatGH₵(pesewas) {
+export function formatGHS(pesewas) {
   if (pesewas == null) return "GH₵0.00";
   const cedis = pesewas / 100;
   return `GH₵${cedis.toLocaleString("en-GH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
