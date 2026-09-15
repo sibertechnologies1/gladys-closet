@@ -31,6 +31,53 @@ export default function CheckoutModal({ isOpen, onClose }) {
     setCustomer({ ...customer, [e.target.name]: e.target.value });
   };
 
+  // Separate post-payment execution handler
+  const handlePaymentSuccess = async (response, orderNumber, orderId) => {
+    try {
+      // 1. Update order status in Supabase database
+      await supabase
+        .from('orders')
+        .update({ status: 'paid', paystack_reference: response.reference })
+        .eq('id', orderId);
+
+      // 2. Format cart items for the Edge Function receipt
+      const formattedItems = cart.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: (item.price_pesewas || item.price * 100) / 100,
+      }));
+
+      // 3. Trigger send-order-confirmation Edge Function
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vtlezevxnuyahpxzcutm.supabase.co';
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      await fetch(`${supabaseUrl}/functions/v1/send-order-confirmation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`,
+        },
+        body: JSON.stringify({
+          orderId: orderNumber,
+          customerName: customer.name,
+          customerEmail: customer.email,
+          items: formattedItems,
+          totalAmount: totalPesewas / 100,
+          shippingAddress: `${customer.address}, ${customer.city}, ${customer.region}`,
+        }),
+      });
+
+      clearCart();
+      setLoading(false);
+      onClose();
+      alert('Payment Successful! Your order confirmation email is on its way.');
+    } catch (err) {
+      console.error('Post-payment execution error:', err);
+      alert('Payment received, but failed to dispatch the receipt email automatically.');
+      setLoading(false);
+    }
+  };
+
   const handlePaystackPayment = async (e) => {
     e.preventDefault();
     if (cart.length === 0) {
@@ -44,7 +91,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
 
-      // 1. Save pending order to Supabase
+      // Save pending order to Supabase
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert([
@@ -71,7 +118,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
         throw new Error('Paystack SDK failed to load. Check your internet connection.');
       }
 
-      // 2. Initialize Paystack Popup
+      // Initialize Paystack Popup with standard sync callback function
       const handler = window.PaystackPop.setup({
         key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
         email: customer.email,
@@ -84,50 +131,8 @@ export default function CheckoutModal({ isOpen, onClose }) {
             { display_name: 'Phone', variable_name: 'customer_phone', value: customer.phone },
           ],
         },
-        callback: async function (response) {
-          try {
-            // Update order status in Supabase database
-            await supabase
-              .from('orders')
-              .update({ status: 'paid', paystack_reference: response.reference })
-              .eq('id', order.id);
-
-            // Format cart items for the Edge Function receipt
-            const formattedItems = cart.map((item) => ({
-              name: item.name,
-              quantity: item.quantity,
-              price: (item.price_pesewas || item.price * 100) / 100,
-            }));
-
-            // 3. Trigger send-order-confirmation Edge Function
-            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vtlezevxnuyahpxzcutm.supabase.co';
-            const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-            await fetch(`${supabaseUrl}/functions/v1/send-order-confirmation`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${anonKey}`,
-              },
-              body: JSON.stringify({
-                orderId: orderNumber,
-                customerName: customer.name,
-                customerEmail: customer.email,
-                items: formattedItems,
-                totalAmount: totalPesewas / 100,
-                shippingAddress: `${customer.address}, ${customer.city}, ${customer.region}`,
-              }),
-            });
-
-            clearCart();
-            setLoading(false);
-            onClose();
-            alert('Payment Successful! Your order confirmation email is on its way.');
-          } catch (err) {
-            console.error('Post-payment execution error:', err);
-            alert('Payment received, but failed to dispatch the receipt email automatically.');
-            setLoading(false);
-          }
+        callback: function (response) {
+          handlePaymentSuccess(response, orderNumber, order.id);
         },
         onClose: function () {
           alert('Payment window closed. Order saved as pending.');
