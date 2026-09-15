@@ -11,7 +11,7 @@ import {
   listOrders,
 } from "../../lib/orders";
 
-import { formatGHS } from "../../lib/format";
+import { formatGH₵ } from "../../lib/format";
 
 import StatusBadge from "../../components/StatusBadge";
 
@@ -136,7 +136,7 @@ export default function Dashboard() {
           label="Total sales"
           value={
             stats
-              ? formatGHS(stats.totalSalesPesewas)
+              ? formatGH₵(stats.totalSalesPesewas)
               : "—"
           }
         />
@@ -376,7 +376,7 @@ export default function Dashboard() {
                   </td>
 
                   <td className="px-4 py-3">
-                    {formatGHS(order.total_pesewas)}
+                    {formatGH₵(order.total_pesewas)}
                   </td>
 
                   <td className="px-4 py-3">
