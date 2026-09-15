@@ -2,17 +2,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const CEO_EMAIL = Deno.env.get("CEO_EMAIL") || "ceo@gladyscloset.com"; // Set this in Supabase environment variables
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-interface OrderItem {
-  name: string;
-  quantity: number;
-  price: number;
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -20,71 +15,85 @@ serve(async (req) => {
   }
 
   try {
-    const { orderId, customerName, customerEmail, items, totalAmount, shippingAddress } = await req.json();
+    const {
+      orderId,
+      customerName,
+      customerEmail,
+      customerPhone,
+      items,
+      totalAmount,
+      shippingAddress,
+    } = await req.json();
 
-    if (!orderId || !customerEmail || !items) {
-      return new Response(
-        JSON.stringify({ error: "Missing required order data" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-      );
-    }
-
-    const itemsListHtml = items
+    const formattedItemsList = items
       .map(
-        (item: OrderItem) => `
-        <tr>
-          <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">GH₵ ${item.price.toFixed(2)}</td>
-        </tr>
-      `
+        (item: any) =>
+          `<li><strong>${item.name}</strong> x${item.quantity} - GH₵ ${item.price.toFixed(2)}</li>`
       )
       .join("");
 
-    // Send receipt to customer
-    const customerEmailResponse = await resend.emails.send({
-      from: "Gladys' Closet <onboarding@resend.dev>",
+    // 1. Customer Email (Itemized Receipt)
+    const customerEmailPromise = resend.emails.send({
+      from: "Gladys' Closet <orders@gladyscloset.com>",
       to: [customerEmail],
-      replyTo: "gladyscloset61@gmail.com",
-      subject: `Order Confirmation #${orderId} - Gladys' Closet`,
+      replyTo: CEO_EMAIL, // Routes customer replies directly to the CEO/Admin
+      subject: `Order Confirmation - #${orderId}`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-          <h1 style="color: #7c3aed; text-align: center;">Thank You for Your Order!</h1>
-          <p>Hi <strong>${customerName}</strong>,</p>
-          <p>We've received your order <strong>#${orderId}</strong> and are getting it ready for shipment.</p>
-          
-          <h3 style="margin-top: 30px;">Order Summary</h3>
-          <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr style="background: #f9fafb; text-align: left;">
-                <th style="padding: 10px; border-bottom: 2px solid #ddd;">Item</th>
-                <th style="padding: 10px; border-bottom: 2px solid #ddd; text-align: center;">Qty</th>
-                <th style="padding: 10px; border-bottom: 2px solid #ddd; text-align: right;">Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${itemsListHtml}
-            </tbody>
-          </table>
+        <h2>Thank you for your order, ${customerName}!</h2>
+        <p>We received your order <strong>#${orderId}</strong> and are preparing it for delivery.</p>
+        <h3>Order Items:</h3>
+        <ul>${formattedItemsList}</ul>
+        <p><strong>Total Paid:</strong> GH₵ ${totalAmount.toFixed(2)}</p>
+        <p><strong>Shipping Address:</strong> ${shippingAddress}</p>
+      `,
+    });
 
-          <div style="text-align: right; margin-top: 15px;">
-            <h3>Total Paid: <span style="color: #7c3aed;">GH₵ ${totalAmount.toFixed(2)}</span></h3>
-          </div>
+    // 2. Merchant Alert (Notification to CEO)
+    const merchantEmailPromise = resend.emails.send({
+      from: "Gladys' Closet System <alerts@gladyscloset.com>",
+      to: [CEO_EMAIL],
+      subject: `🚨 NEW ORDER RECEIVED: #${orderId} - GH₵ ${totalAmount.toFixed(2)}`,
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e5e7eb; rounded: 12px;">
+          <h2 style="color: #6b21a8;">New Order Notification</h2>
+          <p>A new order has just been completed on the storefront.</p>
+          <hr />
+          <h3>Customer Metadata</h3>
+          <ul>
+            <li><strong>Name:</strong> ${customerName}</li>
+            <li><strong>Email:</strong> ${customerEmail}</li>
+            <li><strong>Phone:</strong> ${customerPhone || "N/A"}</li>
+          </ul>
 
-          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
-          <p><strong>Shipping To:</strong><br />${shippingAddress}</p>
+          <h3>Shipping & Delivery Details</h3>
+          <p><strong>Address:</strong> ${shippingAddress}</p>
+
+          <h3>Order Summary</h3>
+          <ul>${formattedItemsList}</ul>
+          <p style="font-size: 18px;"><strong>Total Amount:</strong> GH₵ ${totalAmount.toFixed(2)}</p>
+          <hr />
+          <p style="font-size: 12px; color: #6b7280;">Order Reference: #${orderId}</p>
         </div>
       `,
     });
 
-    return new Response(JSON.stringify({ status: "success", customerEmailResponse }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    // Dispatch both emails in parallel
+    await Promise.all([customerEmailPromise, merchantEmailPromise]);
+
+    return new Response(
+      JSON.stringify({ message: "Order emails sent successfully" }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
+  } catch (error: any) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      }
+    );
   }
 });

@@ -62,6 +62,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
           orderId: orderNumber,
           customerName: customer.name,
           customerEmail: customer.email,
+          customerPhone: customer.phone, // Pass customer phone number to Edge Function
           items: formattedItems,
           totalAmount: totalPesewas / 100,
           shippingAddress: `${customer.address}, ${customer.city}, ${customer.region}`,
