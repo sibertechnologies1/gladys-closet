@@ -17,48 +17,31 @@ serve(async (req) => {
     const { name, email, phone, message } = await req.json();
 
     if (!name || !email || !message) {
-      throw new Error("Missing required fields");
+      return new Response(
+        JSON.stringify({ error: "Missing required fields" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
     }
 
-    // Deliver notifications to both Gmail inboxes via Resend Batch API
-    const data = await resend.batch.send([
-      {
-        from: "Gladys' Closet <onboarding@resend.dev>",
-        to: ["sibertechnologies1@gmail.com"],
-        subject: `New Contact Form Submission from ${name}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-            <h2 style="color: #7c3aed;">New Message Received</h2>
-            <p><strong>Name:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Phone:</strong> ${phone || "Not provided"}</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-            <p><strong>Message:</strong></p>
-            <p style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb;">
-              ${message}
-            </p>
-          </div>
-        `,
-      },
-      {
-        from: "Gladys' Closet <onboarding@resend.dev>",
-        to: ["gladyscloset61@gmail.com"],
-        subject: `New Contact Form Submission from ${name}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-            <h2 style="color: #7c3aed;">New Message Received</h2>
-            <p><strong>Name:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Phone:</strong> ${phone || "Not provided"}</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-            <p><strong>Message:</strong></p>
-            <p style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb;">
-              ${message}
-            </p>
-          </div>
-        `,
-      },
-    ]);
+    const data = await resend.emails.send({
+      from: "Gladys' Closet <onboarding@resend.dev>",
+      to: ["sibertechnologies1@gmail.com"],
+      replyTo: email,
+      subject: `New Contact Form Submission from ${name}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+          <h2 style="color: #7c3aed;">New Message Received</h2>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Phone:</strong> ${phone || "Not provided"}</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+          <p><strong>Message:</strong></p>
+          <p style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb;">
+            ${message}
+          </p>
+        </div>
+      `,
+    });
 
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -67,7 +50,7 @@ serve(async (req) => {
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
+      status: 500,
     });
   }
 });
