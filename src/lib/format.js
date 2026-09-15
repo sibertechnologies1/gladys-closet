@@ -1,9 +1,9 @@
 /**
- * All prices are stored as integer pesewas (GHS x 100) to avoid floating-point
+ * All prices are stored as integer pesewas (GH₵ x 100) to avoid floating-point
  * rounding errors. These helpers convert at the display boundary only.
  */
 
-export function formatGHS(pesewas) {
+export function formatGH₵(pesewas) {
   if (pesewas == null) return "GH₵0.00";
   const cedis = pesewas / 100;
   return `GH₵${cedis.toLocaleString("en-GH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
