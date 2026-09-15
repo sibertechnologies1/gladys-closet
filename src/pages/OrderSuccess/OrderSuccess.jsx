@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { FiCheckCircle, FiUserPlus, FiArrowRight } from 'react-icons/fi';
 import { supabase } from '../../lib/supabase';
-import Navbar from '../components/Navbar/Navbar';
-import Footer from '../components/Footer/Footer';
+import Navbar from '../../components/Navbar/Navbar';
+import Footer from "../../components/Footer/Footer";
 
 export default function OrderSuccess() {
   const location = useLocation();
