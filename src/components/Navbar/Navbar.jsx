@@ -81,6 +81,9 @@ export default function Navbar() {
   }, [searchParams]);
 
   const categories = [
+
+
+     { name: "Home", href: "/" },
     {
       name: "Women",
       href: "/shop?category=women",
