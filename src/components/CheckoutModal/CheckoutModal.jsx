@@ -42,15 +42,14 @@ export default function CheckoutModal({ isOpen, onClose }) {
     const orderNumber = `GC-${Date.now()}`;
 
     try {
-      // Get current authenticated user session
       const { data: { session } } = await supabase.auth.getSession();
 
-      // 1. Save order to Supabase including user_id
+      // 1. Save pending order to Supabase
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert([
           {
-            user_id: session?.user?.id || null, // Associates order with customer account
+            user_id: session?.user?.id || null,
             order_number: orderNumber,
             customer_name: customer.name,
             customer_email: customer.email,
@@ -72,7 +71,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
         throw new Error('Paystack SDK failed to load. Check your internet connection.');
       }
 
-      // 2. Initialize Paystack Popup with explicit inline callback syntax
+      // 2. Initialize Paystack Popup
       const handler = window.PaystackPop.setup({
         key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
         email: customer.email,
@@ -85,22 +84,50 @@ export default function CheckoutModal({ isOpen, onClose }) {
             { display_name: 'Phone', variable_name: 'customer_phone', value: customer.phone },
           ],
         },
-        callback: function (response) {
-          supabase
-            .from('orders')
-            .update({ status: 'paid', paystack_reference: response.reference })
-            .eq('id', order.id)
-            .then(() => {
-              clearCart();
-              setLoading(false);
-              onClose();
-              alert('Payment Successful! Your order has been placed.');
-            })
-            .catch((err) => {
-              console.error('Post-payment error:', err);
-              alert('Payment was received, but updating order status failed. Please contact support.');
-              setLoading(false);
+        callback: async function (response) {
+          try {
+            // Update order status in Supabase database
+            await supabase
+              .from('orders')
+              .update({ status: 'paid', paystack_reference: response.reference })
+              .eq('id', order.id);
+
+            // Format cart items for the Edge Function receipt
+            const formattedItems = cart.map((item) => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: (item.price_pesewas || item.price * 100) / 100,
+            }));
+
+            // 3. Trigger send-order-confirmation Edge Function
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vtlezevxnuyahpxzcutm.supabase.co';
+            const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+            await fetch(`${supabaseUrl}/functions/v1/send-order-confirmation`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${anonKey}`,
+              },
+              body: JSON.stringify({
+                orderId: orderNumber,
+                customerName: customer.name,
+                customerEmail: customer.email,
+                items: formattedItems,
+                totalAmount: totalPesewas / 100,
+                shippingAddress: `${customer.address}, ${customer.city}, ${customer.region}`,
+              }),
             });
+
+            clearCart();
+            setLoading(false);
+            onClose();
+            alert('Payment Successful! Your order confirmation email is on its way.');
+          } catch (err) {
+            console.error('Post-payment execution error:', err);
+            alert('Payment received, but failed to dispatch the receipt email automatically.');
+            setLoading(false);
+          }
         },
         onClose: function () {
           alert('Payment window closed. Order saved as pending.');

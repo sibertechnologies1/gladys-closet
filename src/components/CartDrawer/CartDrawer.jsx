@@ -39,50 +39,58 @@ export default function CartDrawer({ onProceedToCheckout }) {
                 <p className="text-gray-500 font-medium">Your cart is currently empty.</p>
               </div>
             ) : (
-              cart.map((item) => (
-                <div key={`${item.id}-${item.selectedSize}`} className="flex gap-4 border-b border-gray-100 pb-4">
-                  <img
-                    src={item.image_urls[0] || 'https://via.placeholder.com/100'}
-                    alt={item.name}
-                    className="w-20 h-24 object-cover rounded-md"
-                  />
-                  
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex justify-between items-start">
-                        <h3 className="text-sm font-bold text-gray-900">{item.name}</h3>
+              cart.map((item) => {
+                const imageUrl = Array.isArray(item.image_urls) && item.image_urls.length > 0
+                  ? item.image_urls[0]
+                  : item.image || 'https://via.placeholder.com/100';
+
+                return (
+                  <div key={`${item.id}-${item.selectedSize}`} className="flex gap-4 border-b border-gray-100 pb-4">
+                    <img
+                      src={imageUrl}
+                      alt={item.name}
+                      className="w-20 h-24 object-cover rounded-md"
+                    />
+                    
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-start">
+                          <h3 className="text-sm font-bold text-gray-900">{item.name}</h3>
+                          <button
+                            onClick={() => removeFromCart(item.id, item.selectedSize)}
+                            className="text-gray-400 hover:text-red-500 transition"
+                          >
+                            <FiTrash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        {item.selectedSize && (
+                          <p className="text-xs text-gray-500 mt-1">Size: <span className="font-semibold text-gray-700">{item.selectedSize}</span></p>
+                        )}
+                        <p className="text-sm font-bold text-gray-900 mt-1">
+                          GHS {(((item.price_pesewas || item.price * 100) * item.quantity) / 100).toFixed(2)}
+                        </p>
+                      </div>
+
+                      {/* Quantity Selector */}
+                      <div className="flex items-center gap-3 mt-2">
                         <button
-                          onClick={() => removeFromCart(item.id, item.selectedSize)}
-                          className="text-gray-400 hover:text-red-500 transition"
+                          onClick={() => updateQuantity(item.id, item.selectedSize, -1)}
+                          className="p-1 border rounded hover:bg-gray-100 text-gray-600"
                         >
-                          <FiTrash2 className="w-4 h-4" />
+                          <FiMinus className="w-3 h-3" />
+                        </button>
+                        <span className="text-xs font-bold text-gray-800">{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(item.id, item.selectedSize, 1)}
+                          className="p-1 border rounded hover:bg-gray-100 text-gray-600"
+                        >
+                          <FiPlus className="w-3 h-3" />
                         </button>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">Size: <span className="font-semibold text-gray-700">{item.selectedSize}</span></p>
-                      <p className="text-sm font-bold text-gray-900 mt-1">
-                        GHS {((item.price_pesewas * item.quantity) / 100).toFixed(2)}
-                      </p>
-                    </div>
-
-                    {/* Quantity Selector */}
-                    <div className="flex items-center gap-3 mt-2">
-                      <button
-                        onClick={() => updateQuantity(item.id, item.selectedSize, -1)}
-                        className="p-1 border rounded hover:bg-gray-100 text-gray-600"
-                      >
-                        <FiMinus className="w-3 h-3" />
-                      </button>
-                      <span className="text-xs font-bold text-gray-800">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.id, item.selectedSize, 1)}
-                        className="p-1 border rounded hover:bg-gray-100 text-gray-600"
-                      >
-                        <FiPlus className="w-3 h-3" />
-                      </button>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
