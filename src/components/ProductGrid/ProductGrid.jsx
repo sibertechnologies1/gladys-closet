@@ -5,6 +5,7 @@ import { useCart } from "../../context/CartContext";
 import { supabase } from "../../lib/supabase";
 import { FiShoppingCart, FiHeart, FiFilter } from 'react-icons/fi';
 import { FaHeart } from 'react-icons/fa';
+import StockBadge from '../../components/StockBadge'; // Import StockBadge
 
 // Deterministic random generator based on a seed number
 function seededRandom(seed) {
@@ -214,6 +215,12 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
                     alt={product.name}
                     className="w-full h-80 object-cover group-hover:scale-105 transition duration-500"
                   />
+                  
+                  {/* Real-time Stock Alert Badge */}
+                  <div className="absolute top-4 left-4">
+                    <StockBadge productId={product.id} initialStock={product.stock || product.stock_quantity} />
+                  </div>
+
                   <button 
                     onClick={(e) => toggleFavorite(product.id, e)}
                     className="absolute top-4 right-4 bg-white/80 backdrop-blur-md p-2.5 rounded-full text-brand-navy hover:bg-white transition shadow-sm"
