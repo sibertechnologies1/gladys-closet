@@ -27,6 +27,7 @@ import ContentManager from './pages/admin/ContentManager';
 import ReviewModerationManager from './pages/admin/ReviewModerationManager'
 import SubscriberManager from './pages/admin/SubscriberManager'
 import MessageManager from './pages/admin/MessageManager'
+import PreOrders from './pages/admin/PreOrders';
 
 // Admin Dashboard & Layout Component
 import AdminLayout from './components/admin/AdminLayout';
@@ -90,6 +91,7 @@ function App() {
               <Route path="reviews" element={<ReviewModerationManager />} />
               <Route path="subscribe" element={<SubscriberManager />} />
               <Route path="message" element={<MessageManager />} />
+              <Route path="preorders" element={<PreOrders />} />
             </Route>
           </Routes>
 

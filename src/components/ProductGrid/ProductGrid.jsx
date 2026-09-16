@@ -5,19 +5,17 @@ import { useCart } from "../../context/CartContext";
 import { supabase } from "../../lib/supabase";
 import { FiShoppingCart, FiHeart, FiFilter } from 'react-icons/fi';
 import { FaHeart } from 'react-icons/fa';
-import StockBadge from '../../components/StockBadge'; // Import StockBadge
+import StockBadge from '../../components/StockBadge';
+import PreOrderModal from '../../components/PreOrderModal/PreOrderModal';
 
-// Deterministic random generator based on a seed number
 function seededRandom(seed) {
   let x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
 }
 
-// Shuffles an array consistently using the user's unique ID
 function shuffleArrayForUser(array, userId) {
   if (!userId) return array;
   
-  // Turn string user ID into a numeric seed
   let seed = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   let shuffled = [...array];
 
@@ -34,14 +32,13 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
   const [searchParams] = useSearchParams();
   const { addToCart } = useCart();
   const [currentUser, setCurrentUser] = useState(null);
+  const [preorderProduct, setPreorderProduct] = useState(null);
 
-  // Favorites State (persisted in localStorage)
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem('favorite_products');
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Get active session user for personalized grid order
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setCurrentUser(session?.user || null);
@@ -54,7 +51,6 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
     return () => subscription.unsubscribe();
   }, []);
 
-  // Toggle Favorite and Dispatch Event to Navbar
   const toggleFavorite = (productId, e) => {
     e.stopPropagation();
     
@@ -71,11 +67,9 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
     window.dispatchEvent(new Event("favoritesUpdated"));
   };
 
-  // Sorting & Filtering States
   const [sortBy, setSortBy] = useState('newest'); 
   const [maxPrice, setMaxPrice] = useState(2000); 
 
-  // Search and Category parameters
   const searchQuery = searchParams.get('search') || '';
   const urlCategory = searchParams.get('category') || '';
   const activeCategory = selectedCategory || urlCategory;
@@ -123,7 +117,6 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
       } else {
         let fetchedData = data || [];
         
-        // If sorting by default and user is logged in, randomize per-user
         if (sortBy === 'newest' && currentUser?.id) {
           fetchedData = shuffleArrayForUser(fetchedData, currentUser.id);
         }
@@ -138,7 +131,6 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
-      {/* Header Bar */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
         <div>
           <span className="text-xs font-bold uppercase tracking-widest text-brand-pink">
@@ -155,11 +147,10 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
           </h1>
         </div>
 
-        {/* Filter and Sort Controls */}
         <div className="flex flex-wrap items-center gap-4 bg-gray-50 p-3 rounded-2xl border border-gray-100">
           <div className="flex items-center gap-2 text-xs font-medium text-gray-700">
             <FiFilter className="text-brand-purple" />
-            <span>Max Price: <strong>GHS {maxPrice}</strong></span>
+            <span>Max Price: <strong>GH₵ {maxPrice}</strong></span>
             <input 
               type="range" 
               min="50" 
@@ -189,7 +180,6 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
         </div>
       </div>
 
-      {/* Grid Display */}
       {loading ? (
         <div className="text-center py-20 text-brand-purple font-semibold">Loading catalog...</div>
       ) : products.length === 0 ? (
@@ -200,6 +190,8 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {products.map((product, index) => {
             const isFavorite = favorites.includes(product.id);
+            const isPreorder = Boolean(product.is_preorder);
+            const inStock = (product.stock || product.stock_quantity || 0) > 0;
 
             return (
               <motion.div
@@ -216,9 +208,14 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
                     className="w-full h-80 object-cover group-hover:scale-105 transition duration-500"
                   />
                   
-                  {/* Real-time Stock Alert Badge */}
                   <div className="absolute top-4 left-4">
-                    <StockBadge productId={product.id} initialStock={product.stock || product.stock_quantity} />
+                    {isPreorder ? (
+                      <span className="bg-brand-purple text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                        Pre-Order
+                      </span>
+                    ) : (
+                      <StockBadge productId={product.id} initialStock={product.stock || product.stock_quantity} />
+                    )}
                   </div>
 
                   <button 
@@ -243,14 +240,25 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
                   
                   <div className="mt-6 flex items-center justify-between pt-4 border-t border-purple-50">
                     <span className="text-xl font-black text-brand-navy">
-                      GHS {(product.price_pesewas / 100).toFixed(2)}
+                      GH₵ {(product.price_pesewas / 100).toFixed(2)}
                     </span>
                     <button
-                      onClick={() => addToCart(product)}
-                      className="bg-brand-purple text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 hover:bg-brand-pink transition duration-300 shadow-md"
+                      onClick={() => {
+                        if (isPreorder) {
+                          setPreorderProduct(product);
+                        } else {
+                          addToCart(product);
+                        }
+                      }}
+                      disabled={!inStock && !isPreorder}
+                      className={`px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 transition duration-300 shadow-md ${
+                        isPreorder || inStock
+                          ? 'bg-brand-purple text-white hover:bg-brand-pink cursor-pointer'
+                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      }`}
                     >
                       <FiShoppingCart className="w-4 h-4" />
-                      Add to Cart
+                      {isPreorder ? 'Pre-Order' : !inStock ? 'Out of Stock' : 'Add to Cart'}
                     </button>
                   </div>
                 </div>
@@ -258,6 +266,13 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
             );
           })}
         </div>
+      )}
+
+      {preorderProduct && (
+        <PreOrderModal
+          product={preorderProduct}
+          onClose={() => setPreorderProduct(null)}
+        />
       )}
     </div>
   );

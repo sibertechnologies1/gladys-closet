@@ -1,8 +1,6 @@
-
 import { useEffect, useState } from "react";
-
 import { Link } from "react-router-dom";
-
+import { supabase } from "../../lib/supabase";
 import {
   getDashboardStats,
   getMonthlySales,
@@ -10,11 +8,8 @@ import {
   getMonthlyPendingOrders,
   listOrders,
 } from "../../lib/orders";
-
 import { formatGHS } from "../../lib/format";
-
 import StatusBadge from "../../components/StatusBadge";
-
 import {
   ResponsiveContainer,
   LineChart,
@@ -27,18 +22,27 @@ import {
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
-
+  const [lowStockCount, setLowStockCount] = useState(0);
   const [recentOrders, setRecentOrders] = useState([]);
-
   const [monthlySales, setMonthlySales] = useState([]);
-
   const [monthlyOrders, setMonthlyOrders] = useState([]);
-
   const [monthlyPending, setMonthlyPending] = useState([]);
-
   const [error, setError] = useState("");
 
   useEffect(() => {
+    async function fetchLowStock() {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id")
+        .lte("stock", 5);
+
+      if (!error && data) {
+        setLowStockCount(data.length);
+      }
+    }
+
+    fetchLowStock();
+
     Promise.all([
       getDashboardStats(),
       listOrders(),
@@ -55,58 +59,40 @@ export default function Dashboard() {
           pendingData,
         ]) => {
           setStats(statsData);
-
           setRecentOrders(orders.slice(0, 6));
-
           setMonthlySales(salesData);
-
           setMonthlyOrders(ordersData);
-
           setMonthlyPending(pendingData);
         }
       )
       .catch((error) => {
         console.error(error);
-
         setError(
           "Couldn't load dashboard data. Check your Supabase connection."
         );
       });
   }, []);
 
-  /*
-    Combine all monthly data into one array.
-
-    Example:
-
-    [
-      {
-        month: "Apr",
-        orders: 12,
-        sales: 1500,
-        pending: 3
-      }
-    ]
-  */
   const chartData = monthlySales.map((sale) => {
     const orderData = monthlyOrders.find(
       (item) => item.month === sale.month
     );
-
     const pendingData = monthlyPending.find(
       (item) => item.month === sale.month
     );
 
     return {
       month: sale.month,
-
       sales: sale.sales,
-
       orders: orderData?.orders || 0,
-
       pending: pendingData?.pending || 0,
     };
   });
+
+  const averageOrderValue =
+    stats && stats.totalOrders > 0
+      ? stats.totalSalesPesewas / stats.totalOrders
+      : 0;
 
   return (
     <div>
@@ -124,9 +110,8 @@ export default function Dashboard() {
         </p>
       )}
 
-      {/* Dashboard statistics */}
-
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {/* 5-Card Grid including Pending Orders */}
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard
           label="Total orders"
           value={stats ? stats.totalOrders : "—"}
@@ -142,16 +127,28 @@ export default function Dashboard() {
         />
 
         <StatCard
+          label="Avg. order value"
+          value={
+            stats
+              ? formatGHS(averageOrderValue)
+              : "—"
+          }
+        />
+
+        <StatCard
           label="Pending orders"
           value={stats ? stats.pendingCount : "—"}
-          accent
+          accent={stats?.pendingCount > 0}
+        />
+
+        <StatCard
+          label="Low stock items"
+          value={lowStockCount}
+          accent={lowStockCount > 0}
         />
       </div>
 
-      {/* ========================= */}
       {/* ORDERS GRAPH */}
-      {/* ========================= */}
-
       <div className="mt-10">
         <h2 className="font-display text-lg font-medium text-ink">
           Orders Overview
@@ -163,10 +160,7 @@ export default function Dashboard() {
 
         <div className="mt-4 rounded-lg border border-line bg-white p-5">
           <div className="h-[300px] w-full">
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-            >
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <CartesianGrid
                   strokeDasharray="3 3"
@@ -200,10 +194,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ========================= */}
       {/* SALES GRAPH */}
-      {/* ========================= */}
-
       <div className="mt-10">
         <h2 className="font-display text-lg font-medium text-ink">
           Sales Overview
@@ -215,10 +206,7 @@ export default function Dashboard() {
 
         <div className="mt-4 rounded-lg border border-line bg-white p-5">
           <div className="h-[300px] w-full">
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-            >
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <CartesianGrid
                   strokeDasharray="3 3"
@@ -230,19 +218,14 @@ export default function Dashboard() {
                   tick={{ fontSize: 12 }}
                 />
 
-                <YAxis
-                  tick={{ fontSize: 12 }}
-                />
+                <YAxis tick={{ fontSize: 12 }} />
 
                 <Tooltip
                   formatter={(value) =>
-                    `GH₵${Number(value).toLocaleString(
-                      "en-GH",
-                      {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      }
-                    )}`
+                    `GH₵${Number(value).toLocaleString("en-GH", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}`
                   }
                 />
 
@@ -261,10 +244,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ========================= */}
       {/* PENDING ORDERS GRAPH */}
-      {/* ========================= */}
-
       <div className="mt-10">
         <h2 className="font-display text-lg font-medium text-ink">
           Pending Orders
@@ -276,10 +256,7 @@ export default function Dashboard() {
 
         <div className="mt-4 rounded-lg border border-line bg-white p-5">
           <div className="h-[300px] w-full">
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-            >
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <CartesianGrid
                   strokeDasharray="3 3"
@@ -313,10 +290,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ========================= */}
       {/* RECENT ORDERS */}
-      {/* ========================= */}
-
       <div className="mt-10">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-medium text-ink">
@@ -335,21 +309,10 @@ export default function Dashboard() {
           <table className="w-full text-left text-sm">
             <thead className="bg-canvas text-xs uppercase tracking-wide text-muted">
               <tr>
-                <th className="px-4 py-3 font-medium">
-                  Customer
-                </th>
-
-                <th className="px-4 py-3 font-medium">
-                  Total
-                </th>
-
-                <th className="px-4 py-3 font-medium">
-                  Status
-                </th>
-
-                <th className="px-4 py-3 font-medium">
-                  Placed
-                </th>
+                <th className="px-4 py-3 font-medium">Customer</th>
+                <th className="px-4 py-3 font-medium">Total</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Placed</th>
               </tr>
             </thead>
 
@@ -360,35 +323,20 @@ export default function Dashboard() {
                     colSpan={4}
                     className="px-4 py-6 text-center text-muted"
                   >
-                    No orders yet. They'll show up here
-                    once customers start checking out.
+                    No orders yet. They'll show up here once customers start checking out.
                   </td>
                 </tr>
               )}
 
               {recentOrders.map((order) => (
-                <tr
-                  key={order.id}
-                  className="border-t border-line"
-                >
+                <tr key={order.id} className="border-t border-line">
+                  <td className="px-4 py-3">{order.customer_name}</td>
+                  <td className="px-4 py-3">{formatGHS(order.total_pesewas)}</td>
                   <td className="px-4 py-3">
-                    {order.customer_name}
+                    <StatusBadge status={order.status} />
                   </td>
-
-                  <td className="px-4 py-3">
-                    {formatGHS(order.total_pesewas)}
-                  </td>
-
-                  <td className="px-4 py-3">
-                    <StatusBadge
-                      status={order.status}
-                    />
-                  </td>
-
                   <td className="px-4 py-3 text-muted">
-                    {new Date(
-                      order.created_at
-                    ).toLocaleDateString()}
+                    {new Date(order.created_at).toLocaleDateString()}
                   </td>
                 </tr>
               ))}
@@ -417,4 +365,3 @@ function StatCard({ label, value, accent }) {
     </div>
   );
 }
-

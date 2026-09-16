@@ -15,6 +15,7 @@ const emptyForm = {
   sizes: "",
   colors: "",
   stock: "",
+  is_preorder: false,
   image_urls: [],
 };
 
@@ -50,6 +51,7 @@ export default function ProductForm() {
         sizes: (product.sizes || []).join(", "),
         colors: (product.colors || []).join(", "),
         stock: product.stock ?? "",
+        is_preorder: product.is_preorder ?? false,
         image_urls: product.image_urls || [],
       });
     });
@@ -100,8 +102,13 @@ export default function ProductForm() {
       sizes: form.sizes ? form.sizes.split(",").map((s) => s.trim()).filter(Boolean) : [],
       colors: form.colors ? form.colors.split(",").map((c) => c.trim()).filter(Boolean) : [],
       stock: rawStock,
+      is_preorder: form.is_preorder,
       image_urls: form.image_urls,
     };
+
+    if (!isEditing) {
+      payload.initial_stock = rawStock;
+    }
 
     try {
       if (isEditing) {
@@ -109,7 +116,7 @@ export default function ProductForm() {
       } else {
         await createProduct(payload);
       }
-      navigate("/admin/products");
+      navigate("/admindashboard/products");
     } catch (err) {
       console.error("Database save failed:", err);
       setError(err?.message || err?.details || "Couldn't save this product. Double-check the fields and try again.");
@@ -165,6 +172,20 @@ export default function ProductForm() {
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
             />
           </Field>
+        </div>
+
+        {/* Pre-Order Selection Toggle */}
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-purple-50/70 border border-purple-100">
+          <input
+            type="checkbox"
+            id="is_preorder"
+            checked={form.is_preorder}
+            onChange={(e) => updateField("is_preorder", e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+          />
+          <label htmlFor="is_preorder" className="text-sm font-bold text-purple-900 cursor-pointer">
+            Mark as Pre-Order Product
+          </label>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -258,7 +279,7 @@ export default function ProductForm() {
           </button>
           <button
             type="button"
-            onClick={() => navigate("/admin/products")}
+            onClick={() => navigate("/admindashboard/products")}
             className="px-5 py-2.5 border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition"
           >
             Cancel

@@ -61,6 +61,8 @@ export default function AdminLayout() {
 
     { name: "Orders", path: "/admindashboard/orders", icon: FiShoppingBag, end: false },
     
+    { name: "Pre-Orders", path: "/admindashboard/preorders", icon: FiPlusCircle, end: false },
+    
     { name: "Content Manager", path: '/admindashboard/content', icon: FiGrid, end: true },
 
    { name: "Review Manager", path: '/admindashboard/reviews', icon: FaUsers, end: true },

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from "../../components/Footer/Footer";
+import PreOrderModal from "../../components/PreOrderModal/PreOrderModal";
 import { FiFilter, FiSearch, FiShoppingBag, FiCheck, FiX, FiHeart } from 'react-icons/fi';
 import { FaHeart } from 'react-icons/fa';
 import { supabase } from "../../lib/supabase";
@@ -15,6 +16,7 @@ export default function Shop() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addedId, setAddedId] = useState(null);
+  const [preorderProduct, setPreorderProduct] = useState(null);
 
   // Guest-Friendly Favorites State initialized from LocalStorage
   const [favorites, setFavorites] = useState(() => {
@@ -157,6 +159,7 @@ export default function Shop() {
       image: mainImage,
       image_url: mainImage,
       quantity: 1,
+      is_preorder: Boolean(product.is_preorder)
     });
 
     setAddedId(product.id);
@@ -283,6 +286,7 @@ export default function Shop() {
                     ? product.image_urls[0]
                     : 'https://via.placeholder.com/400x400?text=No+Image';
                   const inStock = product.stock > 0;
+                  const isPreorder = Boolean(product.is_preorder);
                   const isFavorite = favorites.includes(product.id);
 
                   return (
@@ -298,15 +302,23 @@ export default function Shop() {
                         />
                         
                         <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
-                          {product.is_new && (
-                            <span className="bg-pink-500 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
-                              New
+                          {isPreorder ? (
+                            <span className="bg-purple-600 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
+                              Pre-Order
                             </span>
-                          )}
-                          {product.stock > 0 && product.stock <= 3 && (
-                            <span className="bg-red-500 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md animate-pulse">
-                              Only {product.stock} Left!
-                            </span>
+                          ) : (
+                            <>
+                              {product.is_new && (
+                                <span className="bg-pink-500 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
+                                  New
+                                </span>
+                              )}
+                              {inStock && product.stock <= 3 && (
+                                <span className="bg-red-500 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md animate-pulse">
+                                  Only {product.stock} Left!
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
 
@@ -347,19 +359,32 @@ export default function Shop() {
 
                           <button
                             type="button"
-                            onClick={(e) => handleAddToCart(product, e)}
-                            disabled={!inStock}
+                            onClick={(e) => {
+                              if (isPreorder) {
+                                e.stopPropagation();
+                                setPreorderProduct(product);
+                              } else {
+                                handleAddToCart(product, e);
+                              }
+                            }}
+                            disabled={!inStock && !isPreorder}
                             className={`p-3 rounded-xl font-bold transition flex items-center gap-1.5 ${
-                              !inStock
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                : addedId === product.id
+                              addedId === product.id
                                 ? 'bg-green-600 text-white'
+                                : isPreorder
+                                ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-md'
+                                : !inStock
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                 : 'bg-purple-600 text-white hover:bg-purple-700 shadow-md'
                             }`}
                           >
                             {addedId === product.id ? (
                               <>
                                 <FiCheck className="w-4 h-4" /> Added
+                              </>
+                            ) : isPreorder ? (
+                              <>
+                                <FiShoppingBag className="w-4 h-4" /> Pre-Order
                               </>
                             ) : !inStock ? (
                               "Out of Stock"
@@ -379,6 +404,13 @@ export default function Shop() {
           </main>
         </div>
       </div>
+
+      {preorderProduct && (
+        <PreOrderModal
+          product={preorderProduct}
+          onClose={() => setPreorderProduct(null)}
+        />
+      )}
 
       <Footer />
     </div>

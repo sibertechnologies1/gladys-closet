@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
-import { listProducts, deleteProduct } from "../../lib/products";
-import { formatGHS } from "../../lib/format";
+import { supabase } from "../../lib/supabase";
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -10,190 +8,219 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function load() {
+  async function fetchProducts() {
     setLoading(true);
-
     try {
-      const data = await listProducts({ search });
-      setProducts(data);
+      let query = supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (search.trim()) {
+        query = query.ilike("name", `%${search.trim()}%`);
+      }
+
+      const { data, error: fetchError } = await query;
+
+      if (fetchError) throw fetchError;
+
+      setProducts(data || []);
       setError("");
     } catch (err) {
-      setError(
-        "Couldn't load products. Check your Supabase connection and table setup."
-      );
+      console.error("Failed to fetch products:", err);
+      setError("Couldn't load products. Please check your network or database connection.");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    const timeout = setTimeout(load, 250);
-
+    const timeout = setTimeout(fetchProducts, 300);
     return () => clearTimeout(timeout);
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   async function handleDelete(product) {
-    const confirmed = window.confirm(
-      `Remove "${product.name}" from the store?`
-    );
-
+    const confirmed = window.confirm(`Remove "${product.name || "this item"}" from your inventory?`);
     if (!confirmed) return;
 
     try {
-      await deleteProduct(product.id);
+      const { error: deleteError } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", product.id);
 
-      setProducts((prev) =>
-        prev.filter((p) => p.id !== product.id)
-      );
+      if (deleteError) throw deleteError;
+
+      setProducts((prev) => prev.filter((p) => p.id !== product.id));
     } catch (err) {
-      window.alert("Couldn't delete that product. Try again.");
+      console.error("Delete error:", err);
+      alert("Failed to delete product. Please try again.");
     }
   }
 
   return (
-    <div>
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
+    <div className="p-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-medium text-ink">
-            Products
-          </h1>
-
-          <p className="mt-1 text-sm text-muted">
-            Add, edit, and manage what's for sale.
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">Products</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage your store inventory, pre-orders, and pricing.</p>
         </div>
 
-        {/* Add Product */}
         <Link
           to="/admindashboard/products/new"
-          className="rounded-md bg-coral px-4 py-2 text-sm font-medium text-white hover:bg-coral-dark"
+          className="inline-flex items-center justify-center bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors shadow-sm"
         >
-          Add product
+          + Add Product
         </Link>
       </div>
 
-      {/* Search */}
-      <input
-        type="search"
-        placeholder="Search products by name…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="mt-6 w-full max-w-sm rounded-md border border-line bg-white px-3 py-2 text-sm outline-none focus:border-plum"
-      />
+      {/* Search Input */}
+      <div className="mt-6">
+        <input
+          type="search"
+          placeholder="Search products by name..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full max-w-md px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-purple-600 text-sm bg-white shadow-sm"
+        />
+      </div>
 
       {/* Error Message */}
       {error && (
-        <p className="mt-4 text-sm text-coral-dark">
+        <div className="mt-4 p-4 rounded-xl bg-red-50 text-red-600 text-sm border border-red-100">
           {error}
-        </p>
+        </div>
       )}
 
-      {/* Products Table */}
-      <div className="mt-4 overflow-hidden rounded-lg border border-line bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-canvas text-xs uppercase tracking-wide text-muted">
+      {/* Table Container */}
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <table className="w-full text-left text-sm text-gray-600">
+          <thead className="bg-gray-50 text-xs font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100">
             <tr>
-              <th className="px-4 py-3 font-medium">Product</th>
-              <th className="px-4 py-3 font-medium">Category</th>
-              <th className="px-4 py-3 font-medium">Price</th>
-              <th className="px-4 py-3 font-medium">Stock</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
+              <th className="px-6 py-4">Product</th>
+              <th className="px-6 py-4">Category</th>
+              <th className="px-6 py-4">Type</th>
+              <th className="px-6 py-4">Price</th>
+              <th className="px-6 py-4">Total Stock</th>
+              <th className="px-6 py-4">Stock Left</th>
+              <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
 
-          <tbody>
-            {/* Loading */}
+          <tbody className="divide-y divide-gray-100">
             {loading && (
               <tr>
-                <td
-                  colSpan={5}
-                  className="px-4 py-6 text-center text-muted"
-                >
-                  Loading products…
+                <td colSpan={7} className="px-6 py-8 text-center text-gray-400">
+                  Loading catalog items...
                 </td>
               </tr>
             )}
 
-            {/* Empty State */}
             {!loading && products.length === 0 && (
               <tr>
-                <td
-                  colSpan={5}
-                  className="px-4 py-6 text-center text-muted"
-                >
-                  No products yet. Click "Add product" to create the
-                  first one.
+                <td colSpan={7} className="px-6 py-8 text-center text-gray-400">
+                  No products found.
                 </td>
               </tr>
             )}
 
-            {/* Products */}
-            {products.map((product) => (
-              <tr
-                key={product.id}
-                className="border-t border-line"
-              >
-                {/* Product */}
-                <td className="flex items-center gap-3 px-4 py-3">
-                  {product.image_urls?.[0] ? (
-                    <img
-                      src={product.image_urls[0]}
-                      alt=""
-                      className="h-10 w-10 rounded-md object-cover"
-                    />
-                  ) : (
-                    <div className="h-10 w-10 rounded-md bg-canvas" />
-                  )}
+            {!loading &&
+              products.map((product) => {
+                const imageUrl = Array.isArray(product.image_urls) && product.image_urls.length > 0
+                  ? product.image_urls[0]
+                  : product.image_url || null;
 
-                  <span className="font-medium text-ink">
-                    {product.name}
-                  </span>
-                </td>
+                const priceGHS = product.price_pesewas
+                  ? (product.price_pesewas / 100).toFixed(2)
+                  : product.price
+                  ? Number(product.price).toFixed(2)
+                  : "0.00";
 
-                {/* Category */}
-                <td className="px-4 py-3 capitalize text-muted">
-                  {product.category}
-                </td>
+                const totalStock = product.initial_stock ?? product.stock ?? 0;
+                const stockLeft = product.stock ?? 0;
+                const isPreorder = Boolean(product.is_preorder);
 
-                {/* Price */}
-                <td className="px-4 py-3">
-                  {formatGHS(product.price_pesewas)}
-                </td>
+                return (
+                  <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
+                    {/* Image & Name */}
+                    <td className="px-6 py-4 flex items-center gap-3">
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={product.name}
+                          className="h-10 w-10 rounded-lg object-cover border border-gray-100"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center text-xs text-gray-400">
+                          No img
+                        </div>
+                      )}
+                      <span className="font-semibold text-gray-900">
+                        {product.name || "Unnamed Product"}
+                      </span>
+                    </td>
 
-                {/* Stock */}
-                <td className="px-4 py-3">
-                  {product.stock === 0 ? (
-                    <span className="text-coral-dark">
-                      Out of stock
-                    </span>
-                  ) : (
-                    product.stock
-                  )}
-                </td>
+                    {/* Category */}
+                    <td className="px-6 py-4 capitalize text-gray-500">
+                      {product.category || "General"}
+                    </td>
 
-                {/* Actions */}
-                <td className="px-4 py-3 text-right">
-                  {/* Edit Product */}
-                  <Link
-                    to={`/admindashboard/products/${product.id}`}
-                    className="mr-4 text-sm font-medium text-plum hover:underline"
-                  >
-                    Edit
-                  </Link>
+                    {/* Type Tag */}
+                    <td className="px-6 py-4">
+                      {isPreorder ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800">
+                          Pre-Order
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                          Standard
+                        </span>
+                      )}
+                    </td>
 
-                  {/* Delete Product */}
-                  <button
-                    onClick={() => handleDelete(product)}
-                    className="text-sm font-medium text-coral-dark hover:underline"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
+                    {/* Price */}
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      GH₵ {priceGHS}
+                    </td>
+
+                    {/* Total Stock */}
+                    <td className="px-6 py-4 font-semibold text-gray-700">
+                      {totalStock}
+                    </td>
+
+                    {/* Stock Left */}
+                    <td className="px-6 py-4">
+                      {stockLeft === 0 ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                          Out of stock (0)
+                        </span>
+                      ) : (
+                        <span className="font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg">
+                          {stockLeft}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Action Links */}
+                    <td className="px-6 py-4 text-right space-x-3 flex items-center justify-end">
+                      <Link
+                        to={`/admindashboard/products/${product.id}`}
+                        className="text-purple-600 hover:text-purple-800 font-semibold text-xs"
+                      >
+                        Edit
+                      </Link>
+
+                      <button
+                        onClick={() => handleDelete(product)}
+                        className="text-red-500 hover:text-red-700 font-semibold text-xs"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
       </div>

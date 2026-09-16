@@ -41,14 +41,47 @@ export default function CheckoutModal({ isOpen, onClose }) {
         .update({ status: 'paid', paystack_reference: response.reference })
         .eq('id', orderId);
 
-      // 2. Format cart items for the Edge Function receipt
+      // 2. Reduce stock for each item in the cart
+      for (const item of cart) {
+        const targetId = item.id || item.product_id;
+        if (!targetId) continue;
+
+        // Fetch the latest stock from the DB
+        const { data: product, error: fetchErr } = await supabase
+          .from('products')
+          .select('stock')
+          .eq('id', targetId)
+          .maybeSingle();
+
+        if (fetchErr) {
+          console.error(`Error fetching stock for product ${targetId}:`, fetchErr);
+          continue;
+        }
+
+        if (product) {
+          const qtyToSubtract = Number(item.quantity) || 1;
+          const currentStock = Number(product.stock) || 0;
+          const newStock = Math.max(0, currentStock - qtyToSubtract);
+
+          const { error: updateErr } = await supabase
+            .from('products')
+            .update({ stock: newStock })
+            .eq('id', targetId);
+
+          if (updateErr) {
+            console.error(`Failed to update stock for product ${targetId}:`, updateErr);
+          }
+        }
+      }
+
+      // 3. Format cart items for the Edge Function receipt
       const formattedItems = cart.map((item) => ({
         name: item.name,
         quantity: item.quantity,
         price: (item.price_pesewas || item.price * 100) / 100,
       }));
 
-      // 3. Trigger send-order-confirmation Edge Function
+      // 4. Trigger send-order-confirmation Edge Function
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vtlezevxnuyahpxzcutm.supabase.co';
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -62,21 +95,21 @@ export default function CheckoutModal({ isOpen, onClose }) {
           orderId: orderNumber,
           customerName: customer.name,
           customerEmail: customer.email,
-          customerPhone: customer.phone, // Pass customer phone number to Edge Function
+          customerPhone: customer.phone,
           items: formattedItems,
           totalAmount: totalPesewas / 100,
           shippingAddress: `${customer.address}, ${customer.city}, ${customer.region}`,
         }),
       });
 
-      // 4. Save order ID locally for guest account registration flow
+      // 5. Save order ID locally for guest account registration flow
       sessionStorage.setItem('last_order_id', orderId);
 
       clearCart();
       setLoading(false);
       onClose();
 
-      // 5. Navigate to confirmation page passing order details
+      // 6. Navigate to confirmation page
       navigate('/order-success', {
         state: {
           orderId,
@@ -86,7 +119,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
       });
     } catch (err) {
       console.error('Post-payment execution error:', err);
-      alert('Payment received, but failed to dispatch the receipt email automatically.');
+      alert('Payment received, but failed to process inventory update or dispatch receipt.');
       setLoading(false);
     }
   };
@@ -102,11 +135,9 @@ export default function CheckoutModal({ isOpen, onClose }) {
     const orderNumber = `GC-${Date.now()}`;
 
     try {
-      // Fetch session safely; proceeds with null if user is a guest
       const { data: { session } } = await supabase.auth.getSession();
       const currentUserId = session?.user?.id || null;
 
-      // Save pending order to Supabase
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert([
@@ -133,7 +164,6 @@ export default function CheckoutModal({ isOpen, onClose }) {
         throw new Error('Paystack SDK failed to load. Check your internet connection.');
       }
 
-      // Initialize Paystack Popup
       const handler = window.PaystackPop.setup({
         key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
         email: customer.email,
