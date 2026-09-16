@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const CEO_EMAIL = Deno.env.get("CEO_EMAIL") || "ceo@gladyscloset.com"; // Set this in Supabase environment variables
+const CEO_EMAIL = Deno.env.get("CEO_EMAIL") || "gladysissaka84@gmail.com";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,9 +52,10 @@ serve(async (req) => {
     const merchantEmailPromise = resend.emails.send({
       from: "Gladys' Closet System <alerts@gladyscloset.com>",
       to: [CEO_EMAIL],
+      replyTo: customerEmail, // Standardized: Clicking reply in the CEO inbox emails the customer directly
       subject: `🚨 NEW ORDER RECEIVED: #${orderId} - GH₵ ${totalAmount.toFixed(2)}`,
       html: `
-        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e5e7eb; rounded: 12px;">
+        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px;">
           <h2 style="color: #6b21a8;">New Order Notification</h2>
           <p>A new order has just been completed on the storefront.</p>
           <hr />
