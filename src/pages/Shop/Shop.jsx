@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from "../../components/Footer/Footer";
 import PreOrderModal from "../../components/PreOrderModal/PreOrderModal";
+import SizeGuideModal from "../../components/SizeGuideModal/SizeGuideModal";
+import StyleAssistant from "../../components/StyleAssistant/StyleAssistant";
 import { FiFilter, FiSearch, FiShoppingBag, FiCheck, FiX, FiHeart } from 'react-icons/fi';
 import { FaHeart } from 'react-icons/fa';
 import { supabase } from "../../lib/supabase";
@@ -17,6 +19,7 @@ export default function Shop() {
   const [loading, setLoading] = useState(true);
   const [addedId, setAddedId] = useState(null);
   const [preorderProduct, setPreorderProduct] = useState(null);
+  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
 
   // Guest-Friendly Favorites State initialized from LocalStorage
   const [favorites, setFavorites] = useState(() => {
@@ -32,7 +35,7 @@ export default function Shop() {
   // Toggle Favorite for both Guests and Logged-in Users
   const toggleFavorite = (productId, e) => {
     if (e) e.stopPropagation();
-    
+
     try {
       const saved = localStorage.getItem('favorite_products');
       const currentFavorites = saved ? JSON.parse(saved) : [];
@@ -186,7 +189,7 @@ export default function Shop() {
               <span>Results for: "{searchQuery}"</span>
               <button 
                 onClick={clearSearch} 
-                className="p-1 hover:bg-purple-100 rounded-lg text-purple-600 transition"
+                className="p-1 hover:bg-purple-100 rounded-lg text-purple-600 transition cursor-pointer"
                 title="Clear Search"
               >
                 <FiX className="w-4 h-4" />
@@ -210,8 +213,9 @@ export default function Shop() {
                 {['all', 'women', 'men', 'kids', 'sports', 'accessories'].map((aud) => (
                   <button
                     key={aud}
+                    type="button"
                     onClick={() => handleAudienceChange(aud)}
-                    className={`block w-full text-left px-3 py-2 rounded-xl text-sm font-semibold capitalize transition ${
+                    className={`block w-full text-left px-3 py-2 rounded-xl text-sm font-semibold capitalize transition cursor-pointer ${
                       selectedAudience.toLowerCase() === aud
                         ? 'bg-purple-600 text-white shadow-sm'
                         : 'text-gray-600 hover:bg-gray-100'
@@ -249,18 +253,25 @@ export default function Shop() {
               <p className="text-sm text-gray-500 font-medium">
                 Showing <span className="font-bold text-gray-900">{filteredProducts.length}</span> items
               </p>
-
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <label className="text-xs font-bold text-gray-400 uppercase">Sort By:</label>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-700 outline-none focus:border-purple-500"
+                  className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-700 outline-none focus:border-purple-500 cursor-pointer"
                 >
                   <option value="newest">Newest First</option>
                   <option value="low-to-high">Price: Low to High</option>
                   <option value="high-to-low">Price: High to Low</option>
                 </select>
+
+                <button
+                  type="button"
+                  onClick={() => setIsSizeGuideOpen(true)}
+                  className="px-3 py-1.5 rounded-lg bg-purple-50 text-purple-700 text-xs font-bold border border-purple-100 hover:bg-purple-100 transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>📏</span> Find Your Size
+                </button>
               </div>
             </div>
 
@@ -294,50 +305,50 @@ export default function Shop() {
                       key={product.id}
                       className="group bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-xl transition duration-300 flex flex-col justify-between"
                     >
-                      <div className="relative aspect-square overflow-hidden bg-gray-100">
-                        <img
-                          src={imageUrl}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                        />
-                        
-                        <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
-                          {isPreorder ? (
-                            <span className="bg-purple-600 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
-                              Pre-Order
-                            </span>
-                          ) : (
-                            <>
-                              {product.is_new && (
-                                <span className="bg-pink-500 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
-                                  New
-                                </span>
-                              )}
-                              {inStock && product.stock <= 3 && (
-                                <span className="bg-red-500 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md animate-pulse">
-                                  Only {product.stock} Left!
-                                </span>
-                              )}
-                            </>
-                          )}
+                      <div>
+                        <div className="relative aspect-square overflow-hidden bg-gray-100">
+                          <img
+                            src={imageUrl}
+                            alt={product.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                          />
+
+                          <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
+                            {isPreorder ? (
+                              <span className="bg-purple-600 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
+                                Pre-Order
+                              </span>
+                            ) : (
+                              <>
+                                {product.is_new && (
+                                  <span className="bg-pink-500 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
+                                    New
+                                  </span>
+                                )}
+                                {inStock && product.stock <= 3 && (
+                                  <span className="bg-red-500 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md animate-pulse">
+                                    Only {product.stock} Left!
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => toggleFavorite(product.id, e)}
+                            title={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                            className="absolute top-3 right-3 p-2.5 rounded-full bg-white/80 backdrop-blur-md hover:bg-white text-gray-700 hover:text-red-500 shadow-md transition cursor-pointer"
+                          >
+                            {isFavorite ? (
+                              <FaHeart className="w-4 h-4 text-red-500" />
+                            ) : (
+                              <FiHeart className="w-4 h-4" />
+                            )}
+                          </button>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={(e) => toggleFavorite(product.id, e)}
-                          title={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
-                          className="absolute top-3 right-3 p-2.5 rounded-full bg-white/80 backdrop-blur-md hover:bg-white text-gray-700 hover:text-red-500 shadow-md transition"
-                        >
-                          {isFavorite ? (
-                            <FaHeart className="w-4 h-4 text-red-500" />
-                          ) : (
-                            <FiHeart className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-
-                      <div className="p-5 flex-1 flex flex-col justify-between">
-                        <div>
+                        <div className="p-5">
                           <span className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">
                             {product.category}
                           </span>
@@ -347,8 +358,12 @@ export default function Shop() {
                           <p className="text-xs text-gray-400 mt-1 line-clamp-2">
                             {product.description}
                           </p>
-                        </div>
 
+                          <StyleAssistant currentProduct={product} />
+                        </div>
+                      </div>
+
+                      <div className="p-5 pt-0">
                         <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between">
                           <div>
                             <span className="text-xs text-gray-400 block">Price</span>
@@ -368,7 +383,7 @@ export default function Shop() {
                               }
                             }}
                             disabled={!inStock && !isPreorder}
-                            className={`p-3 rounded-xl font-bold transition flex items-center gap-1.5 ${
+                            className={`p-3 rounded-xl font-bold transition flex items-center gap-1.5 cursor-pointer ${
                               addedId === product.id
                                 ? 'bg-green-600 text-white'
                                 : isPreorder
@@ -411,6 +426,11 @@ export default function Shop() {
           onClose={() => setPreorderProduct(null)}
         />
       )}
+
+      <SizeGuideModal
+        isOpen={isSizeGuideOpen}
+        onClose={() => setIsSizeGuideOpen(false)}
+      />
 
       <Footer />
     </div>

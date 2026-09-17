@@ -7,6 +7,8 @@ import { FiShoppingCart, FiHeart, FiFilter } from 'react-icons/fi';
 import { FaHeart } from 'react-icons/fa';
 import StockBadge from '../../components/StockBadge';
 import PreOrderModal from '../../components/PreOrderModal/PreOrderModal';
+import SizeGuideModal from '../../components/SizeGuideModal/SizeGuideModal';
+import StyleAssistant from '../../components/StyleAssistant/StyleAssistant';
 
 function seededRandom(seed) {
   let x = Math.sin(seed) * 10000;
@@ -33,6 +35,7 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
   const { addToCart } = useCart();
   const [currentUser, setCurrentUser] = useState(null);
   const [preorderProduct, setPreorderProduct] = useState(null);
+  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
 
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem('favorite_products');
@@ -177,6 +180,16 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
               <option value="price_desc">Price: High to Low</option>
             </select>
           </div>
+
+          <div className="h-4 w-px bg-gray-200 hidden sm:block" />
+
+          <button
+            type="button"
+            onClick={() => setIsSizeGuideOpen(true)}
+            className="text-xs font-bold text-brand-purple hover:text-brand-pink transition flex items-center gap-1 cursor-pointer"
+          >
+            <span>📏</span> Size Guide
+          </button>
         </div>
       </div>
 
@@ -236,6 +249,8 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
                     <span className="text-xs font-bold uppercase tracking-wider text-brand-pink">{product.category}</span>
                     <h2 className="text-lg font-bold text-brand-navy mt-1 group-hover:text-brand-purple transition">{product.name}</h2>
                     <p className="text-sm text-gray-500 mt-2 line-clamp-2 leading-relaxed">{product.description}</p>
+
+                       <StyleAssistant currentProduct={product} />
                   </div>
                   
                   <div className="mt-6 flex items-center justify-between pt-4 border-t border-purple-50">
@@ -274,6 +289,11 @@ export default function ProductGrid({ selectedCategory, limit = null, isNewArriv
           onClose={() => setPreorderProduct(null)}
         />
       )}
+
+      <SizeGuideModal
+        isOpen={isSizeGuideOpen}
+        onClose={() => setIsSizeGuideOpen(false)}
+      />
     </div>
   );
 }

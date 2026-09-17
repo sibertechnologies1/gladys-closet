@@ -124,7 +124,7 @@ export default function Dashboard() {
                     <div key={order.id} className="border border-gray-100 rounded-2xl p-6 bg-white shadow-sm flex justify-between items-center">
                       <div>
                         <span className="text-xs font-bold text-gray-400">ORDER #{order.id.slice(0, 8)}</span>
-                        <h3 className="text-lg font-bold text-brand-navy mt-1">GHS {(order.total_pesewas / 100).toFixed(2)}</h3>
+                        <h3 className="text-lg font-bold text-brand-navy mt-1">GH₵ {(order.total_pesewas / 100).toFixed(2)}</h3>
                         <p className="text-xs text-gray-500 mt-1">{new Date(order.created_at).toLocaleDateString()}</p>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${
@@ -154,7 +154,7 @@ export default function Dashboard() {
                       <img src={prod.image_urls?.[0]} alt={prod.name} className="w-20 h-20 object-cover rounded-xl" />
                       <div>
                         <h3 className="font-bold text-brand-navy text-sm">{prod.name}</h3>
-                        <p className="text-brand-purple font-bold text-sm mt-1">GHS {(prod.price_pesewas / 100).toFixed(2)}</p>
+                        <p className="text-brand-purple font-bold text-sm mt-1">GH₵ {(prod.price_pesewas / 100).toFixed(2)}</p>
                       </div>
                     </div>
                   ))}
