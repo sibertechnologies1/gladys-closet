@@ -24,7 +24,13 @@ jobs:
         run: npm ci
 
       - name: Run Integration Tests
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: mock-anon-key-for-ci
         run: npm run test
 
       - name: Build Application
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: mock-anon-key-for-ci
         run: npm run build
