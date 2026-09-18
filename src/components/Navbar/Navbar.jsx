@@ -114,7 +114,7 @@ export default function Navbar() {
       ],
     },
     { name: "Sports", href: "/shop?category=sports" },
-    { name: "Brands", href: "/shop?category=brands" },
+    { name: "Brands", href: "/brands" },
     { name: "New Arrivals", href: "/newarrivals?sort=newest" },
     { name: "About", href: "/about" },
     { name: "Shop", href: "/shop" },

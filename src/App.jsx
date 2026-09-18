@@ -10,6 +10,7 @@ import Cart from './pages/Cart/Cart';
 import NewArrivals from './pages/NewArrivals/NewArrivals';
 import Favorites from './pages/Favorites/Favorites';
 import OrderSuccess from './pages/OrderSuccess/OrderSuccess';
+import Brands from './pages/Brands/Brands';
 import Login from './pages/Login/Login';
 import Signup from './pages/Signup/Signup';
 
@@ -28,6 +29,7 @@ import ReviewModerationManager from './pages/admin/ReviewModerationManager'
 import SubscriberManager from './pages/admin/SubscriberManager'
 import MessageManager from './pages/admin/MessageManager'
 import PreOrders from './pages/admin/PreOrders';
+import AdminBrands from './pages/admin/AdminBrands';
 
 // Admin Dashboard & Layout Component
 import AdminLayout from './components/admin/AdminLayout';
@@ -60,6 +62,7 @@ function App() {
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/order-success" element={<OrderSuccess />} />
+            <Route path="/brands" element={<Brands />} />
 
             {/* Customer Authentication & Dashboard */}
             <Route path="/login" element={<Login />} />
@@ -92,6 +95,7 @@ function App() {
               <Route path="subscribe" element={<SubscriberManager />} />
               <Route path="message" element={<MessageManager />} />
               <Route path="preorders" element={<PreOrders />} />
+              <Route path="brands" element={<AdminBrands />} />
             </Route>
           </Routes>
 

@@ -71,6 +71,8 @@ export default function AdminLayout() {
     
     { name: "Message Manager", path: '/admindashboard/message', icon: MessageSquareText, end: true },
     
+    { name: "Brands", path: "/admindashboard/brands", icon: FiGrid, end: true },
+    
   ];
 
 
