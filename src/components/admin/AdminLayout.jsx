@@ -229,7 +229,7 @@ export default function AdminLayout() {
 
           {/* Navigation Links */}
 
-          <nav className="space-y-1.5">
+          <nav className="space-y-1.5 overflow-y-visible md:overflow-y-auto max-h-[calc(100vh-200px)]">
 
             {navItems.map((item) => {
 
@@ -273,13 +273,10 @@ export default function AdminLayout() {
 
             })}
 
-          </nav>
-
-        </div>
 
 
 
-        {/* Footer Actions */}
+ {/* Footer Actions */}
 
         <div className="space-y-2 pt-4 border-t border-gray-100">
 
@@ -325,6 +322,16 @@ export default function AdminLayout() {
 
         </div>
 
+          </nav>
+
+
+          
+
+        </div>
+
+
+
+       
       </aside>
 
 
