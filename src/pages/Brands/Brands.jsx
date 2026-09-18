@@ -6,6 +6,7 @@ import BrandHero from '../../components/BrandHero/BrandHero';
 
 export default function Brands() {
   const [brands, setBrands] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,6 +24,11 @@ export default function Brands() {
     loadBrands();
   }, []);
 
+  const filteredBrands = brands.filter((brand) =>
+    brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (brand.description && brand.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   return (
     <div className="w-full min-h-screen flex flex-col bg-slate-50">
       <header className="w-full bg-white border-b border-slate-200">
@@ -35,7 +41,7 @@ export default function Brands() {
       </section>
 
       {/* Continuous Right-to-Left Logo Marquee */}
-      {!loading && brands.length > 0 && (
+      {!loading && filteredBrands.length > 0 && (
         <section className="w-full bg-white py-6 border-y border-slate-200 overflow-hidden shadow-sm">
           <style>{`
             @keyframes marquee {
@@ -54,7 +60,7 @@ export default function Brands() {
 
           <div className="animate-marquee flex items-center space-x-12">
             {/* Duplicate array to create seamless loop */}
-            {[...brands, ...brands].map((brand, idx) => (
+            {[...filteredBrands, ...filteredBrands].map((brand, idx) => (
               <div key={`${brand.id}-${idx}`} className="flex items-center justify-center h-16 w-32 shrink-0 grayscale hover:grayscale-0 transition duration-300">
                 {brand.logo_url ? (
                   <img src={brand.logo_url} alt={brand.name} className="max-h-12 max-w-full object-contain" />
@@ -69,18 +75,46 @@ export default function Brands() {
 
       {/* Constrained Grid Content (Fixed 3-Column Layout) */}
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-10" id="featured">
-          <h2 className="text-3xl font-bold text-gray-900">Our Partner Brands</h2>
+        <div className="text-center mb-8" id="featured">
+          <h2 className="text-3xl font-bold text-purple-600">Our Partner Brands</h2>
           <p className="text-gray-600 mt-2">Explore official brand storefronts available at Gladys' Closet.</p>
+        </div>
+
+        {/* Search Bar Input */}
+        <div className="max-w-md mx-auto mb-10">
+          <div className="relative">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search brands by name or description..."
+              className="w-full px-4 py-3 pl-11 text-sm bg-white border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+            />
+            <svg
+              className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
         </div>
 
         {loading ? (
           <div className="text-center py-20 text-gray-500">Loading brands...</div>
-        ) : brands.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">No brands available yet.</div>
+        ) : filteredBrands.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            {searchTerm ? `No brands matching "${searchTerm}".` : 'No brands available yet.'}
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {brands.map((brand) => (
+            {filteredBrands.map((brand) => (
               <div 
                 key={brand.id} 
                 className="border border-slate-200 rounded-xl p-8 flex flex-col items-center text-center shadow-sm hover:shadow-md transition bg-white"
