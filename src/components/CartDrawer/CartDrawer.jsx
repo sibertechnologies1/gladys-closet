@@ -40,12 +40,17 @@ export default function CartDrawer({ onProceedToCheckout }) {
               </div>
             ) : (
               cart.map((item) => {
-                const imageUrl = Array.isArray(item.image_urls) && item.image_urls.length > 0
-                  ? item.image_urls[0]
-                  : item.image || 'https://via.placeholder.com/100';
+                // Prioritize the variant/active image attached to the product payload
+                const imageUrl = item.image 
+                  || item.color_image_url 
+                  || (Array.isArray(item.image_urls) && item.image_urls.length > 0 ? item.image_urls[0] : null) 
+                  || 'https://via.placeholder.com/100';
+
+                const colorName = item.selected_color || item.color || null;
+                const uniqueKey = `${item.id}-${item.selectedSize}-${colorName || 'default'}`;
 
                 return (
-                  <div key={`${item.id}-${item.selectedSize}`} className="flex gap-4 border-b border-gray-100 pb-4">
+                  <div key={uniqueKey} className="flex gap-4 border-b border-gray-100 pb-4">
                     <img
                       src={imageUrl}
                       alt={item.name}
@@ -57,31 +62,43 @@ export default function CartDrawer({ onProceedToCheckout }) {
                         <div className="flex justify-between items-start">
                           <h3 className="text-sm font-bold text-gray-900">{item.name}</h3>
                           <button
-                            onClick={() => removeFromCart(item.id, item.selectedSize)}
+                            onClick={() => removeFromCart(item.id, item.selectedSize, colorName)}
                             className="text-gray-400 hover:text-red-500 transition"
                           >
                             <FiTrash2 className="w-4 h-4" />
                           </button>
                         </div>
-                        {item.selectedSize && (
-                          <p className="text-xs text-gray-500 mt-1">Size: <span className="font-semibold text-gray-700">{item.selectedSize}</span></p>
+
+                        {/* Display Variant Color */}
+                        {colorName && (
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Color: <span className="font-semibold text-gray-700">{colorName}</span>
+                          </p>
                         )}
+
+                        {/* Display Variant Size */}
+                        {item.selectedSize && (
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Size: <span className="font-semibold text-gray-700">{item.selectedSize}</span>
+                          </p>
+                        )}
+
                         <p className="text-sm font-bold text-gray-900 mt-1">
-                          GHS {(((item.price_pesewas || item.price * 100) * item.quantity) / 100).toFixed(2)}
+                          GHS {(((item.price_pesewas || (item.price * 100)) * item.quantity) / 100).toFixed(2)}
                         </p>
                       </div>
 
                       {/* Quantity Selector */}
                       <div className="flex items-center gap-3 mt-2">
                         <button
-                          onClick={() => updateQuantity(item.id, item.selectedSize, -1)}
+                          onClick={() => updateQuantity(item.id, item.selectedSize, -1, colorName)}
                           className="p-1 border rounded hover:bg-gray-100 text-gray-600"
                         >
                           <FiMinus className="w-3 h-3" />
                         </button>
                         <span className="text-xs font-bold text-gray-800">{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.id, item.selectedSize, 1)}
+                          onClick={() => updateQuantity(item.id, item.selectedSize, 1, colorName)}
                           className="p-1 border rounded hover:bg-gray-100 text-gray-600"
                         >
                           <FiPlus className="w-3 h-3" />

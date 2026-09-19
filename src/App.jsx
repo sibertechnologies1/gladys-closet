@@ -41,6 +41,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 
+
+import ProductDetail from './components/ProductDetail/ProductDetail';
+
 function App() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
@@ -63,6 +66,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/brands" element={<Brands />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
 
             {/* Customer Authentication & Dashboard */}
             <Route path="/login" element={<Login />} />

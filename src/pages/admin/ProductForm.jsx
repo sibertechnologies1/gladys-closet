@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getProduct, createProduct, updateProduct, uploadProductImage } from "../../lib/products";
 import { cedisToPesewas, pesewasToCedisInput } from "../../lib/format";
+import { supabase } from "../../lib/supabase";
+import { FiPlus, FiTrash2, FiUpload } from "react-icons/fi";
 
-const CATEGORIES = ["Dresses", "Tops", "Skirts", "Traditional", "Bottoms", "Accessories"];
+const CATEGORIES = ["Dresses", "Tops", "Skirts", "Traditional", "Bottoms", "Accessories", "Sneakers", "Sandals", "Heels", "Flats", "Bags", "Jewelry", "Watches", "Hats", "Scarves", "Sunglasses", "Belts", "Outerwear", "Swimwear", "Lingerie", "Sleepwear", "Activewear", "Maternity", "Kidswear", "Shoes"];
 const AUDIENCES = ["women", "men", "kids", "sports"];
 
 const emptyForm = {
@@ -12,10 +14,14 @@ const emptyForm = {
   price: "",
   category: "Dresses",
   audience: "women",
-  sizes: "",
-  colors: "",
-  stock: "",
   is_preorder: false,
+  image_urls: [],
+};
+
+const emptyVariant = {
+  color: "",
+  size: "",
+  stock_quantity: 0,
   image_urls: [],
 };
 
@@ -35,122 +41,212 @@ export default function ProductForm() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState(emptyForm);
+  const [variants, setVariants] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!isEditing) return;
-    getProduct(id).then((product) => {
-      setForm({
-        name: product.name || "",
-        description: product.description || "",
-        price: pesewasToCedisInput(product.price_pesewas),
-        category: product.category || "Dresses",
-        audience: product.audience || "women",
-        sizes: (product.sizes || []).join(", "),
-        colors: (product.colors || []).join(", "),
-        stock: product.stock ?? "",
-        is_preorder: product.is_preorder ?? false,
-        image_urls: product.image_urls || [],
-      });
-    });
+    async function loadData() {
+      try {
+        const product = await getProduct(id);
+        setForm({
+          name: product.name || "",
+          description: product.description || "",
+          price: pesewasToCedisInput(product.price_pesewas),
+          category: product.category || "Dresses",
+          audience: product.audience || "women",
+          is_preorder: product.is_preorder ?? false,
+          image_urls: product.image_urls || [],
+        });
+
+        const { data: variantData } = await supabase
+          .from("product_variants")
+          .select("*")
+          .eq("product_id", id);
+
+        if (variantData && variantData.length > 0) {
+          setVariants(variantData);
+        }
+      } catch (err) {
+        setError("Failed to load product details.");
+      }
+    }
+    loadData();
   }, [id, isEditing]);
 
   function updateField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  async function handleImageUpload(e) {
+  function addVariantRow() {
+    setVariants((prev) => [...prev, { ...emptyVariant }]);
+  }
+
+  function removeVariantRow(index) {
+    setVariants((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateVariantField(index, field, value) {
+    setVariants((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  }
+
+  async function handleMainImageUpload(e) {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
     setUploading(true);
-    setError("");
-
     try {
       const urls = await Promise.all(files.map(uploadProductImage));
-      setForm((prev) => ({ ...prev, image_urls: urls }));
-    } catch (err) {
-      setError("Image upload failed. Check that the 'product-images' storage bucket exists and is public.");
+      setForm((prev) => ({ ...prev, image_urls: [...prev.image_urls, ...urls] }));
+    } catch {
+      setError("Image upload failed.");
     } finally {
       setUploading(false);
     }
   }
 
-  function removeImage(url) {
-    setForm((prev) => ({
-      ...prev,
-      image_urls: prev.image_urls.filter((u) => u !== url),
-    }));
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setSaving(true);
-    setError("");
-
-    const rawPrice = parseFloat(form.price) || 0;
-    const rawStock = parseInt(form.stock, 10) || 0;
-
-    const payload = {
-      name: form.name.trim(),
-      slug: slugify(form.name),
-      description: form.description.trim(),
-      price_pesewas: cedisToPesewas(rawPrice),
-      category: form.category,
-      audience: form.audience,
-      sizes: form.sizes ? form.sizes.split(",").map((s) => s.trim()).filter(Boolean) : [],
-      colors: form.colors ? form.colors.split(",").map((c) => c.trim()).filter(Boolean) : [],
-      stock: rawStock,
-      is_preorder: form.is_preorder,
-      image_urls: form.image_urls,
-    };
-
-    if (!isEditing) {
-      payload.initial_stock = rawStock;
-    }
-
+  async function handleVariantImageUpload(index, e) {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setUploading(true);
     try {
-      if (isEditing) {
-        await updateProduct(id, payload);
-      } else {
-        await createProduct(payload);
-      }
-      navigate("/admindashboard/products");
-    } catch (err) {
-      console.error("Database save failed:", err);
-      setError(err?.message || err?.details || "Couldn't save this product. Double-check the fields and try again.");
+      const urls = await Promise.all(files.map(uploadProductImage));
+      setVariants((prev) => {
+        const updated = [...prev];
+        const currentUrls = updated[index].image_urls || [];
+        updated[index].image_urls = [...currentUrls, ...urls];
+        return updated;
+      });
+    } catch {
+      setError("Variant image upload failed.");
     } finally {
-      setSaving(false);
+      setUploading(false);
     }
   }
 
+async function handleSubmit(e) {
+  e.preventDefault();
+  setSaving(true);
+  setError("");
+
+  const rawPrice = parseFloat(form.price) || 0;
+  const computedStock = variants.length > 0
+    ? variants.reduce((acc, v) => acc + (parseInt(v.stock_quantity, 10) || 0), 0)
+    : 0;
+
+  const extractedSizes = [...new Set(variants.map((v) => v.size).filter(Boolean))];
+  const extractedColors = [...new Set(variants.map((v) => v.color).filter(Boolean))];
+
+  const payload = {
+    name: form.name.trim(),
+    slug: slugify(form.name),
+    description: form.description.trim(),
+    price_pesewas: cedisToPesewas(rawPrice),
+    category: form.category,
+    audience: form.audience,
+    sizes: extractedSizes,
+    colors: extractedColors,
+    stock: computedStock,
+    is_preorder: form.is_preorder,
+    image_urls: form.image_urls,
+  };
+
+  try {
+    let productId = id;
+    if (isEditing) {
+      await updateProduct(id, payload);
+    } else {
+      payload.initial_stock = computedStock;
+      const newProd = await createProduct(payload);
+      productId = newProd.id;
+    }
+
+    if (productId) {
+      // 1. Refresh variants
+      await supabase.from("product_variants").delete().eq("product_id", productId);
+
+      if (variants.length > 0) {
+        const variantPayloads = variants.map((v) => ({
+          product_id: productId,
+          color_name: v.color || null,
+          color_hex: v.color_hex || "",
+          stock_quantity: parseInt(v.stock_quantity, 10) || 0,
+          color_image_url: v.image_urls?.[0] || null,
+        }));
+
+        const { data: insertedVariants, error: variantError } = await supabase
+          .from("product_variants")
+          .insert(variantPayloads)
+          .select();
+
+        if (variantError) throw variantError;
+
+        // 2. Refresh product_images table entries
+        await supabase.from("product_images").delete().eq("product_id", productId);
+
+        const imagePayload = [];
+
+        // Insert variant image entries
+        insertedVariants?.forEach((variant) => {
+          if (variant.color_image_url) {
+            imagePayload.push({
+              product_id: productId,
+              variant_id: variant.id,
+              image_url: variant.color_image_url,
+              is_primary: false,
+            });
+          }
+        });
+
+        // Insert main showcase image entries
+        form.image_urls.forEach((url, idx) => {
+          imagePayload.push({
+            product_id: productId,
+            variant_id: null,
+            image_url: url,
+            is_primary: idx === 0,
+          });
+        });
+
+        if (imagePayload.length > 0) {
+          const { error: imgErr } = await supabase
+            .from("product_images")
+            .insert(imagePayload);
+
+          if (imgErr) throw imgErr;
+        }
+      }
+    }
+
+    navigate("/admindashboard/products");
+  } catch (err) {
+    console.error(err);
+    setError(err?.message || "Couldn't save product.");
+  } finally {
+    setSaving(false);
+  }
+}
   return (
-    <div className="max-w-2xl bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+    <div className="max-w-4xl bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mx-auto">
       <h1 className="text-2xl font-black text-gray-900 tracking-tight">
         {isEditing ? "Edit Product" : "Add Product"}
       </h1>
 
-      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
-        <Field label="Name">
-          <input
-            required
-            value={form.name}
-            onChange={(e) => updateField("name", e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
-          />
-        </Field>
-
-        <Field label="Description">
-          <textarea
-            rows={4}
-            value={form.description}
-            onChange={(e) => updateField("description", e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
-          />
-        </Field>
-
-        <div className="grid grid-cols-2 gap-4">
+      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="Name">
+            <input
+              required
+              value={form.name}
+              onChange={(e) => updateField("name", e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-purple-600 outline-none"
+            />
+          </Field>
           <Field label="Price (GHS)">
             <input
               required
@@ -159,22 +255,41 @@ export default function ProductForm() {
               step="0.01"
               value={form.price}
               onChange={(e) => updateField("price", e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
-            />
-          </Field>
-          <Field label="Stock">
-            <input
-              required
-              type="number"
-              min="0"
-              value={form.stock}
-              onChange={(e) => updateField("stock", e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-purple-600 outline-none"
             />
           </Field>
         </div>
 
-        {/* Pre-Order Selection Toggle */}
+        <Field label="Description">
+          <textarea
+            rows={3}
+            value={form.description}
+            onChange={(e) => updateField("description", e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-purple-600 outline-none"
+          />
+        </Field>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="Category">
+            <select
+              value={form.category}
+              onChange={(e) => updateField("category", e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:ring-2 focus:ring-purple-600 outline-none"
+            >
+              {CATEGORIES.map((c) => (<option key={c} value={c}>{c}</option>))}
+            </select>
+          </Field>
+          <Field label="Audience">
+            <select
+              value={form.audience}
+              onChange={(e) => updateField("audience", e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:ring-2 focus:ring-purple-600 outline-none"
+            >
+              {AUDIENCES.map((a) => (<option key={a} value={a}>{a}</option>))}
+            </select>
+          </Field>
+        </div>
+
         <div className="flex items-center gap-3 p-4 rounded-xl bg-purple-50/70 border border-purple-100">
           <input
             type="checkbox"
@@ -188,94 +303,113 @@ export default function ProductForm() {
           </label>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Category">
-            <select
-              value={form.category}
-              onChange={(e) => updateField("category", e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600 bg-white"
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Audience">
-            <select
-              value={form.audience}
-              onChange={(e) => updateField("audience", e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600 bg-white"
-            >
-              {AUDIENCES.map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Sizes (comma-separated)">
-            <input
-              placeholder="S, M, L, XL"
-              value={form.sizes}
-              onChange={(e) => updateField("sizes", e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
-            />
-          </Field>
-          <Field label="Colors (comma-separated)">
-            <input
-              placeholder="Black, Cream, Rust"
-              value={form.colors}
-              onChange={(e) => updateField("colors", e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
-            />
-          </Field>
-        </div>
-
-        <Field label="Images">
-          <input 
-            type="file" 
-            accept="image/*" 
-            onChange={handleImageUpload} 
+        <Field label="Main Showcase Images">
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleMainImageUpload}
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer"
           />
-          {uploading && <p className="mt-1 text-xs text-gray-500">Uploading new image...</p>}
-          
-          {form.image_urls.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-3">
-              {form.image_urls.map((url) => (
-                <div key={url} className="relative group w-20 h-20">
-                  <img src={url} alt="Product preview" className="w-full h-full rounded-xl object-cover border border-gray-200" />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(url)}
-                    className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center shadow-md hover:bg-red-700 transition"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="mt-3 flex flex-wrap gap-2">
+            {form.image_urls.map((url) => (
+              <div key={url} className="relative w-16 h-16">
+                <img src={url} alt="Main preview" className="w-full h-full rounded-lg object-cover border" />
+                <button
+                  type="button"
+                  onClick={() => setForm((p) => ({ ...p, image_urls: p.image_urls.filter((u) => u !== url) }))}
+                  className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
         </Field>
 
-        {error && (
-          <p className="p-3 bg-red-50 border border-red-100 rounded-xl text-sm font-medium text-red-600">
-            {error}
-          </p>
-        )}
+        <div className="border-t border-gray-100 pt-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold text-gray-900">Product Variants</h2>
+            <button
+              type="button"
+              onClick={addVariantRow}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 text-xs font-bold rounded-xl transition"
+            >
+              <FiPlus /> Add Variant
+            </button>
+          </div>
 
-        <div className="mt-4 flex gap-3">
+          <div className="space-y-4">
+            {variants.map((v, idx) => (
+              <div key={idx} className="p-4 rounded-xl border border-gray-200 bg-gray-50 flex flex-col gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <input
+                    placeholder="Color (e.g. Red)"
+                    value={v.color}
+                    onChange={(e) => updateVariantField(idx, "color", e.target.value)}
+                    className="px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white outline-none"
+                  />
+                  <input
+                    placeholder="Size (e.g. XL)"
+                    value={v.size}
+                    onChange={(e) => updateVariantField(idx, "size", e.target.value)}
+                    className="px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white outline-none"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Stock Quantity"
+                    value={v.stock_quantity}
+                    onChange={(e) => updateVariantField(idx, "stock_quantity", e.target.value)}
+                    className="px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white outline-none"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <label className="cursor-pointer inline-flex items-center gap-1 text-xs font-semibold text-purple-700 bg-purple-100/70 hover:bg-purple-100 px-3 py-1.5 rounded-lg">
+                      <FiUpload /> Upload Variant Images
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleVariantImageUpload(idx, e)}
+                      />
+                    </label>
+                    <span className="text-xs text-gray-400">({v.image_urls?.length || 0} uploaded)</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => removeVariantRow(idx)}
+                    className="text-red-500 hover:text-red-700 text-xs font-bold flex items-center gap-1"
+                  >
+                    <FiTrash2 /> Remove
+                  </button>
+                </div>
+
+                {v.image_urls && v.image_urls.length > 0 && (
+                  <div className="flex gap-2">
+                    {v.image_urls.map((img) => (
+                      <img key={img} src={img} alt="Variant preview" className="w-10 h-10 rounded-md object-cover border" />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {error && <p className="p-3 bg-red-50 border border-red-100 rounded-xl text-sm font-medium text-red-600">{error}</p>}
+
+        <div className="flex gap-3">
           <button
             type="submit"
             disabled={saving || uploading}
-            className="px-5 py-2.5 bg-purple-700 hover:bg-purple-800 text-white text-sm font-semibold rounded-xl shadow-sm transition disabled:opacity-50"
+            className="px-6 py-2.5 bg-purple-700 hover:bg-purple-800 text-white text-sm font-semibold rounded-xl shadow-sm transition disabled:opacity-50"
           >
-            {saving ? "Saving..." : "Save Product"}
+            {saving ? "Saving..." : "Save Product & Variants"}
           </button>
           <button
             type="button"

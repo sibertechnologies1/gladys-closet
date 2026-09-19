@@ -75,9 +75,9 @@ export default function Navbar() {
     };
   }, []);
 
-  // Compute displayed counts (resetting to 0 when logged out)
-  const cartItemCount = user ? cart.reduce((total, item) => total + item.quantity, 0) : 0;
-  const displayedFavoritesCount = user ? favoritesCount : 0;
+  // Compute displayed counts based on actual items in state/localStorage
+  const cartItemCount = cart.reduce((total, item) => total + (item.quantity || 1), 0);
+  const displayedFavoritesCount = favoritesCount;
 
   useEffect(() => {
     setSearchQuery(searchParams.get("search") || "");
