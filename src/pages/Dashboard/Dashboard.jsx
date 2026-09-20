@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { FiUser, FiPackage, FiHeart, FiLogOut, FiShoppingBag } from 'react-icons/fi';
 
+
+import Navbar from "../../components/Navbar/Navbar";
+import Footer from "../../components/Footer/Footer"
+
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [orders, setOrders] = useState([]);
@@ -60,7 +64,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-12">
+    <div>
+      <Navbar />
+          <div className="max-w-7xl mx-auto px-4 py-12">
       {/* Header Banner */}
       <div className="bg-brand-navy text-white rounded-3xl p-8 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -176,5 +182,8 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+    <Footer />
+    </div>
+
   );
 }
