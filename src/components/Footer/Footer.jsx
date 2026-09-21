@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FiPhone, FiMail, FiMapPin, FiInstagram} from "react-icons/fi";
+import { FiPhone, FiMail, FiMapPin, FiInstagram } from "react-icons/fi";
 import { FaWhatsapp, FaTiktok  } from "react-icons/fa";
 import logo from "../../assets/logo.png";
 
@@ -102,17 +102,17 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/shop?category=kids" className="hover:text-amber-300 transition">
+                <Link to="/shop?category=kids" className="hover:text-purple-600 transition">
                   Kids
                 </Link>
               </li>
               <li>
-                <Link to="/shop?category=sports" className="hover:text-amber-300 transition">
+                <Link to="/shop?category=sports" className="hover:text-purple-600 transition">
                   Sports
                 </Link>
               </li>
               <li>
-                <Link to="/shop?sort=sale" className="text-pink-400 font-semibold hover:text-pink-300 transition">
+                <Link to="/shop?sort=sale" className="text-purple-600 font-semibold hover:text-purple-600 transition">
                   Sale Items
                 </Link>
               </li>
