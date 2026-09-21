@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
-import { FiPhone, FiMail, FiMapPin, FiInstagram, FiFacebook } from "react-icons/fi";
+import { FiPhone, FiMail, FiMapPin, FiInstagram} from "react-icons/fi";
+import { FaWhatsapp, FaTiktok  } from "react-icons/fa";
 import logo from "../../assets/logo.png";
+
 
 export default function Footer() {
   return (
@@ -23,7 +25,7 @@ export default function Footer() {
             </p>
             <div className="flex space-x-3 pt-2">
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/gladyscloset_gh"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
@@ -31,14 +33,25 @@ export default function Footer() {
               >
                 <FiInstagram className="w-4 h-4" />
               </a>
+
               <a
-                href="https://facebook.com"
+                href="https://www.tiktok.com/@gladyscloset_gh"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Facebook"
+                aria-label="Tiktok"
                 className="p-2.5 bg-white/10 rounded-full border border-white/10 text-white hover:bg-amber-400 hover:text-slate-900 hover:border-amber-400 transition duration-200"
               >
-                <FiFacebook className="w-4 h-4" />
+                <FaTiktok  className="w-4 h-4" />
+              </a>
+
+               <a
+                href="https://wa.me/233595805215"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="WhatsApp"
+                className="p-2.5 bg-white/10 rounded-full border border-white/10 text-white hover:bg-amber-400 hover:text-slate-900 hover:border-amber-400 transition duration-200"
+              >
+                <FaWhatsapp className="w-4 h-4" />
               </a>
             </div>
           </div>
