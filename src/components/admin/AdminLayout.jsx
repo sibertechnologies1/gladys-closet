@@ -9,6 +9,7 @@ import {
   FiExternalLink,
   FiMenu,
   FiX,
+  FiSliders
 } from "react-icons/fi";
 import { FaUsers, FaThumbsUp } from "react-icons/fa";
 import { MessageSquareText } from "lucide-react";
@@ -36,6 +37,7 @@ export default function AdminLayout() {
     { name: "Subscribe Manager", path: "/admindashboard/subscribe", icon: FaThumbsUp, end: true },
     { name: "Message Manager", path: "/admindashboard/message", icon: MessageSquareText, end: true },
     { name: "Brands", path: "/admindashboard/brands", icon: FiGrid, end: true },
+    { name: "Site Manager", path: "/admindashboard/sitemanager", icon: FiSliders, end: true },
   ];
 
   return (

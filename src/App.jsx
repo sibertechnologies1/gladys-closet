@@ -11,6 +11,7 @@ import NewArrivals from './pages/NewArrivals/NewArrivals';
 import Favorites from './pages/Favorites/Favorites';
 import OrderSuccess from './pages/OrderSuccess/OrderSuccess';
 import Brands from './pages/Brands/Brands';
+import DynamicPage from './pages/DynamicPage/DynamicPage';
 import Login from './pages/Login/Login';
 import Signup from './pages/Signup/Signup';
 
@@ -30,6 +31,7 @@ import SubscriberManager from './pages/admin/SubscriberManager'
 import MessageManager from './pages/admin/MessageManager'
 import PreOrders from './pages/admin/PreOrders';
 import AdminBrands from './pages/admin/AdminBrands';
+import AdminSiteManager from './pages/admin/AdminSiteManager';
 
 // Admin Dashboard & Layout Component
 import AdminLayout from './components/admin/AdminLayout';
@@ -100,6 +102,7 @@ function App() {
               <Route path="message" element={<MessageManager />} />
               <Route path="preorders" element={<PreOrders />} />
               <Route path="brands" element={<AdminBrands />} />
+              <Route path="sitemanager" element={<AdminSiteManager />} />
             </Route>
           </Routes>
 

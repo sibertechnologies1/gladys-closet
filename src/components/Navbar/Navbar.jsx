@@ -14,7 +14,7 @@ import {
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
-import logo from "../../assets/logo.png";
+import fallbackLogo from "../../assets/logo.png";
 import VisualSearchModal from "../../components/VisualSearchModal/VisualSearchModal";
 
 export default function Navbar() {
@@ -22,6 +22,9 @@ export default function Navbar() {
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("women");
   const [isVisualSearchOpen, setIsVisualSearchOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("");
+  const [navItems, setNavItems] = useState([]);
+  
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -29,6 +32,33 @@ export default function Navbar() {
   const auth = useAuth?.() || {};
   const [user, setUser] = useState(auth.user || null);
 
+  // Fetch dynamic store settings and navigation tabs
+  useEffect(() => {
+    fetchStoreSettings();
+    fetchNavTabs();
+  }, []);
+
+  async function fetchStoreSettings() {
+    const { data } = await supabase.from("store_settings").select("logo_url").eq("id", 1).single();
+    if (data?.logo_url) setLogoUrl(data.logo_url);
+  }
+
+  useEffect(() => {
+    fetchNavTabs();
+  }, []);
+
+async function fetchNavTabs() {
+    const { data, error } = await supabase
+      .from('navigation_tabs')
+      .select('*')
+      .order('order_index', { ascending: true });
+
+    if (!error && data) {
+      setNavItems(data);
+    }
+  }
+
+  // Supabase auth subscription
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -78,7 +108,6 @@ export default function Navbar() {
     setSearchQuery(searchParams.get("search") || "");
   }, [searchParams]);
 
-  // Structured data tailored for the mega-menu
   const megaMenuData = {
     women: {
       title: "Women's Collection",
@@ -215,7 +244,7 @@ export default function Navbar() {
     if (href === "/shop") {
       return location.pathname === "/shop" && !location.search;
     }
-    return currentUrl === href;
+    return currentUrl === href || location.pathname === href;
   };
 
   const executeSearch = () => {
@@ -261,10 +290,11 @@ export default function Navbar() {
               {mobileMenuOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}
             </button>
 
+            {/* Dynamic Logo with Fallback */}
             <Link to="/" className="flex items-center">
               <img
-                src={logo}
-                alt="Gladys' Closet"
+                src={logoUrl || fallbackLogo}
+                alt="Store Logo"
                 className="h-9 sm:h-12 w-auto object-contain"
               />
             </Link>
@@ -440,13 +470,13 @@ export default function Navbar() {
             </form>
           </div>
 
-          {/* Desktop Nav Bar with Mega-Menu Trigger */}
+          {/* Dynamic Desktop Nav Bar with Mega-Menu Trigger */}
           <nav className="hidden md:flex items-center space-x-8 pt-3 text-sm font-medium border-t border-gray-50 mt-3 relative">
             <Link to="/" className={`py-1 ${isLinkActive('/') ? "text-purple-600 font-bold" : "text-gray-700 hover:text-purple-600"}`}>
               Home
             </Link>
 
-            {/* Shop Categories (Mega Menu Trigger) */}
+            {/* Shop Categories Mega Menu */}
             <div
               className="relative py-1 cursor-pointer"
               onMouseEnter={() => setMegaMenuOpen(true)}
@@ -459,12 +489,9 @@ export default function Navbar() {
                 <FiChevronDown className={`w-3.5 h-3.5 transition-transform ${megaMenuOpen ? "rotate-180" : ""}`} />
               </span>
 
-              {/* Mega-Menu Panel */}
               {megaMenuOpen && (
                 <div className="absolute left-0 top-full pt-2 w-[850px] z-50">
                   <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex min-h-[380px]">
-                    
-                    {/* Left Sidebar (Categories Switcher) */}
                     <div className="w-48 bg-gray-50 border-r border-gray-100 py-4 flex flex-col gap-1">
                       {Object.keys(megaMenuData).map((catKey) => {
                         const isSelected = selectedCategory === catKey;
@@ -489,7 +516,6 @@ export default function Navbar() {
                       })}
                     </div>
 
-                    {/* Middle Content (Sub-categories & Brands) */}
                     <div className="flex-1 p-6 flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
@@ -503,7 +529,6 @@ export default function Navbar() {
                           </Link>
                         </div>
 
-                        {/* Sub-categories Grid */}
                         <div className="grid grid-cols-3 gap-6">
                           {activeMegaContent.sections.map((sec) => (
                             <div key={sec.heading}>
@@ -528,7 +553,6 @@ export default function Navbar() {
                         </div>
                       </div>
 
-                      {/* Featured Brands Horizontal Section */}
                       {activeMegaContent.brands && (
                         <div className="pt-4 border-t border-gray-100 mt-4">
                           <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-2">
@@ -550,7 +574,6 @@ export default function Navbar() {
                       )}
                     </div>
 
-                    {/* Right Promotional Card */}
                     {activeMegaContent.promo && (
                       <div className={`w-56 p-5 bg-gradient-to-br ${activeMegaContent.promo.bgClass} text-white flex flex-col justify-between`}>
                         <div>
@@ -569,27 +592,24 @@ export default function Navbar() {
                         </Link>
                       </div>
                     )}
-
                   </div>
                 </div>
               )}
             </div>
 
-            <Link to="/brands" className={`py-1 ${isLinkActive('/brands') ? "text-purple-600 font-bold" : "text-gray-700 hover:text-purple-600"}`}>
-              Brands
-            </Link>
-            <Link to="/newarrivals?sort=newest" className={`py-1 ${isLinkActive('/newarrivals?sort=newest') ? "text-purple-600 font-bold" : "text-gray-700 hover:text-purple-600"}`}>
-              New Arrivals
-            </Link>
-            <Link to="/about" className={`py-1 ${isLinkActive('/about') ? "text-purple-600 font-bold" : "text-gray-700 hover:text-purple-600"}`}>
-              About
-            </Link>
-            <Link to="/contact" className={`py-1 ${isLinkActive('/contact') ? "text-purple-600 font-bold" : "text-gray-700 hover:text-purple-600"}`}>
-              Contact
-            </Link>
+            {/* Dynamic Navigation Items from Supabase */}
+            {navItems.map((item) => (
+              <Link
+                key={item.id}
+                to={item.href}
+                className={`py-1 ${isLinkActive(item.href) ? "text-purple-600 font-bold" : "text-gray-700 hover:text-purple-600"}`}
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
 
-          {/* Mobile Drawer Menu */}
+          {/* Dynamic Mobile Menu Drawer */}
           {mobileMenuOpen && (
             <nav className="md:hidden flex flex-col space-y-3 pt-4 pb-2 border-t border-gray-100 mt-3">
               {!user && (
@@ -610,6 +630,26 @@ export default function Navbar() {
                   </Link>
                 </div>
               )}
+
+              <Link
+                to="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-base font-bold text-gray-800 py-1"
+              >
+                Home
+              </Link>
+
+              {/* Dynamic Navigation Tabs in Mobile */}
+              {navItems.map((item) => (
+                <Link
+                  key={item.id}
+                  to={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-base font-bold text-gray-800 py-1"
+                >
+                  {item.label}
+                </Link>
+              ))}
 
               {Object.entries(megaMenuData).map(([catKey, catData]) => (
                 <div key={catKey} className="flex flex-col border-b border-gray-50 pb-2">
@@ -645,11 +685,9 @@ export default function Navbar() {
               ))}
             </nav>
           )}
-
         </div>
       </header>
 
-      {/* Visual Search Upload Modal */}
       <VisualSearchModal
         isOpen={isVisualSearchOpen}
         onClose={() => setIsVisualSearchOpen(false)}
