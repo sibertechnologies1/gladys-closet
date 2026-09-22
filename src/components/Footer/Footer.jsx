@@ -29,7 +29,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
-                className="p-2.5 bg-white/10 rounded-full border border-white/10 text-white hover:bg-amber-400 hover:text-slate-900 hover:border-amber-400 transition duration-200"
+                className="p-2.5 bg-white/10 rounded-full border border-white/10 text-white hover:bg-purple-600 hover:text-slate-900 hover:border-purple-600 transition duration-200"
               >
                 <FiInstagram className="w-4 h-4" />
               </a>
@@ -39,7 +39,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Tiktok"
-                className="p-2.5 bg-white/10 rounded-full border border-white/10 text-white hover:bg-amber-400 hover:text-slate-900 hover:border-amber-400 transition duration-200"
+                className="p-2.5 bg-white/10 rounded-full border border-white/10 text-white hover:bg-purple-600 hover:text-slate-900 hover:border-purple-600 transition duration-200"
               >
                 <FaTiktok  className="w-4 h-4" />
               </a>
@@ -49,7 +49,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp"
-                className="p-2.5 bg-white/10 rounded-full border border-white/10 text-white hover:bg-amber-400 hover:text-slate-900 hover:border-amber-400 transition duration-200"
+                className="p-2.5 bg-white/10 rounded-full border border-white/10 text-white hover:bg-purple-600 hover:text-slate-900 hover:border-purple-600 transition duration-200"
               >
                 <FaWhatsapp className="w-4 h-4" />
               </a>
@@ -58,27 +58,27 @@ export default function Footer() {
 
           {/* Navigation Column */}
           <div className="col-span-1">
-            <h3 className="text-xs font-bold text-amber-400 uppercase tracking-widest mb-4">
+            <h3 className="text-xs font-bold text-purple-600 uppercase tracking-widest mb-4">
               Navigation
             </h3>
             <ul className="space-y-2.5 text-sm text-gray-300">
               <li>
-                <Link to="/" className="hover:text-amber-300 transition">
+                <Link to="/" className="hover:text-purple-600 transition">
                   Home
                 </Link>
               </li>
               <li>
-                <Link to="/shop" className="hover:text-amber-300 transition">
+                <Link to="/shop" className="hover:text-purple-600 transition">
                   Shop All
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="hover:text-amber-300 transition">
+                <Link to="/about" className="hover:text-purple-600 transition">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="hover:text-amber-300 transition">
+                <Link to="/contact" className="hover:text-purple-600 transition">
                   Contact Us
                 </Link>
               </li>
@@ -87,22 +87,22 @@ export default function Footer() {
 
           {/* Categories Column */}
           <div className="col-span-1">
-            <h3 className="text-xs font-bold text-amber-400 uppercase tracking-widest mb-4">
+            <h3 className="text-xs font-bold text-purple-600 uppercase tracking-widest mb-4">
               Categories
             </h3>
             <ul className="space-y-2.5 text-sm text-gray-300">
               <li>
-                <Link to="/shop?category=women" className="hover:text-amber-300 transition">
+                <Link to="/shop?category=women" className="hover:text-purple-600 transition">
                   Women
                 </Link>
               </li>
               <li>
-                <Link to="/shop?category=men" className="hover:text-amber-300 transition">
+                <Link to="/shop?category=men" className="hover:text-purple-600 transition">
                   Men
                 </Link>
               </li>
               <li>
-                <Link to="/shop?category=kids" className="hover:text-purple-600 transition">
+                <Link to="/shop?category=kids" className="hover:text-purple-300 transition">
                   Kids
                 </Link>
               </li>
@@ -121,25 +121,25 @@ export default function Footer() {
 
           {/* Contact Info Column - Spans full width on mobile */}
           <div className="col-span-2 lg:col-span-1">
-            <h3 className="text-xs font-bold text-amber-400 uppercase tracking-widest mb-4">
+            <h3 className="text-xs font-bold text-purple-600 uppercase tracking-widest mb-4">
               Contact Us
             </h3>
             <ul className="space-y-3 text-sm text-gray-300">
               <li className="flex items-start gap-3">
-                <FiMapPin className="text-amber-400 w-4 h-4 shrink-0 mt-0.5" />
+                <FiMapPin className="text-purple-600 w-4 h-4 shrink-0 mt-0.5" />
                 <span>Accra, Ghana</span>
               </li>
               <li className="flex items-center gap-3">
-                <FiPhone className="text-amber-400 w-4 h-4 shrink-0" />
-                <a href="tel:0595805215" className="hover:text-amber-300 transition">
+                <FiPhone className="text-purple-600 w-4 h-4 shrink-0" />
+                <a href="tel:0595805215" className="hover:text-purple-600 transition">
                   0595805215
                 </a>
               </li>
               <li className="flex items-center gap-3">
-                <FiMail className="text-amber-400 w-4 h-4 shrink-0" />
+                <FiMail className="text-purple-600 w-4 h-4 shrink-0" />
                 <a
                   href="mailto:gladyscloset61@gmail.com"
-                  className="hover:text-amber-300 transition truncate"
+                  className="hover:text-purple-600 transition truncate"
                 >
                   gladyscloset61@gmail.com
                 </a>

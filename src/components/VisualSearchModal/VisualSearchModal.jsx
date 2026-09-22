@@ -6,6 +6,7 @@ import { useCart } from "../../context/CartContext";
 
 export default function VisualSearchModal({ isOpen, onClose }) {
   const [useCamera, setUseCamera] = useState(false);
+  const [facingMode, setFacingMode] = useState("environment"); // "environment" = back, "user" = front
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -15,9 +16,22 @@ export default function VisualSearchModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
+  // Exact facingMode configuration with fallback
+  const videoConstraints = {
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    facingMode: facingMode === "environment" ? { exact: "environment" } : "user",
+  };
+
+  const toggleCamera = () => {
+    setFacingMode((prevMode) => (prevMode === "user" ? "environment" : "user"));
+  };
+
   // Capture frame directly from webcam feed
   const capturePhoto = () => {
-    const imageSrc = webcamRef.current.getScreenshot();
+    const imageSrc = webcamRef.current?.getScreenshot();
+    if (!imageSrc) return;
+
     setImagePreview(imageSrc);
     setUseCamera(false);
 
@@ -83,12 +97,31 @@ export default function VisualSearchModal({ isOpen, onClose }) {
             <div className="flex flex-col items-center">
               <div className="relative w-full h-64 rounded-2xl overflow-hidden bg-black mb-4">
                 <Webcam
+                  key={facingMode} // Forces component unmount/remount when camera state changes
                   audio={false}
                   ref={webcamRef}
                   screenshotFormat="image/jpeg"
+                  videoConstraints={videoConstraints}
+                  onUserMediaError={(err) => {
+                    console.warn("Exact constraints failed, falling back to basic mode", err);
+                    // Fallback if device doesn't support { exact: "environment" }
+                    if (typeof videoConstraints.facingMode === "object") {
+                      setFacingMode("environment");
+                    }
+                  }}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 border-2 border-purple-500/50 rounded-2xl pointer-events-none" />
+
+                {/* Switch Camera Button */}
+                <button
+                  type="button"
+                  onClick={toggleCamera}
+                  className="absolute top-3 right-3 p-2.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition z-10 shadow-md active:scale-95"
+                  title="Switch Camera"
+                >
+                  <FiRefreshCw className="w-4 h-4" />
+                </button>
               </div>
               <div className="flex gap-3">
                 <button
