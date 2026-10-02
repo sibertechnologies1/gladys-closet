@@ -6,7 +6,6 @@ import { getSiteContent } from "../../lib/content";
 const LOCAL_STORAGE_KEY = "cached_home_hero_slides";
 
 export default function HomeHeroSection() {
-  // Read from localStorage instantly on component initialization
   const [slides, setSlides] = useState(() => {
     try {
       const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -19,7 +18,25 @@ export default function HomeHeroSection() {
   const [current, setCurrent] = useState(0);
   const [loading, setLoading] = useState(() => slides.length === 0);
 
-  // Fetch updated slides from Supabase in the background
+  // Inject critical image link preloads into document head for fast mobile rendering
+  useEffect(() => {
+    if (slides.length > 0 && slides[0]?.image) {
+      const link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "image";
+      link.href = slides[0].image;
+      document.head.appendChild(link);
+
+      return () => {
+        try {
+          document.head.removeChild(link);
+        } catch (e) {
+          // Ignore if already unmounted
+        }
+      };
+    }
+  }, [slides]);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -29,18 +46,21 @@ export default function HomeHeroSection() {
         if (data?.home_hero_slides) {
           const parsed = JSON.parse(data.home_hero_slides);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Save to localStorage for instant loads on future visits/reloads
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(parsed));
 
-            // Preload images before updating state to avoid flicker
+            // Force mobile image decode before state update
             await Promise.all(
               parsed.map((slide) => {
                 return new Promise((resolve) => {
                   if (!slide.image) return resolve();
                   const img = new Image();
                   img.src = slide.image;
-                  img.onload = resolve;
-                  img.onerror = resolve;
+                  if ("decode" in img) {
+                    img.decode().then(resolve).catch(resolve);
+                  } else {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                  }
                 });
               })
             );
@@ -66,7 +86,6 @@ export default function HomeHeroSection() {
     };
   }, []);
 
-  // Autoplay timer
   useEffect(() => {
     if (slides.length <= 1) return;
     const timer = setInterval(() => {
@@ -83,7 +102,6 @@ export default function HomeHeroSection() {
     setCurrent((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
   };
 
-  // Hide component until initial slides load if cache is completely empty
   if (loading && slides.length === 0) {
     return <div className="w-full h-[80vh] min-h-[550px]" />;
   }
@@ -94,7 +112,6 @@ export default function HomeHeroSection() {
 
   return (
     <section className="relative w-full h-[80vh] min-h-[550px] overflow-hidden">
-      {/* Permanent base image to prevent flashing background during transitions */}
       <img
         src={currentSlide.image}
         alt={currentSlide.title || "Home Banner Background"}
@@ -110,19 +127,17 @@ export default function HomeHeroSection() {
           transition={{ duration: 0.35, ease: "easeInOut" }}
           className="absolute inset-0 w-full h-full"
         >
-          {/* Active Banner Image */}
           <img
             src={currentSlide.image}
             alt={currentSlide.title || "Home Banner"}
             fetchPriority={current === 0 ? "high" : "auto"}
-            decoding="async"
+            loading="eager"
+            decoding="sync"
             className="w-full h-full object-cover object-center"
           />
 
-          {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent" />
 
-          {/* Text Content */}
           <div className="absolute inset-0 max-w-7xl mx-auto px-6 flex flex-col justify-center text-white">
             <motion.div
               initial={{ y: 12, opacity: 0 }}
@@ -157,7 +172,6 @@ export default function HomeHeroSection() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Prev / Next Controls */}
       {slides.length > 1 && (
         <>
           <button
@@ -177,7 +191,6 @@ export default function HomeHeroSection() {
         </>
       )}
 
-      {/* Pagination Indicators */}
       {slides.length > 1 && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
           {slides.map((_, idx) => (

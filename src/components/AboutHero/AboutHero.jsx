@@ -5,7 +5,6 @@ import { getSiteContent } from '../../lib/content';
 const LOCAL_STORAGE_KEY = "cached_about_hero_slides";
 
 export default function AboutHero() {
-  // Read cached slides synchronously on mount
   const [slides, setSlides] = useState(() => {
     try {
       const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -17,6 +16,25 @@ export default function AboutHero() {
 
   const [current, setCurrent] = useState(0);
   const [loading, setLoading] = useState(() => slides.length === 0);
+
+  // Inject critical image link preloads into document head for fast mobile rendering
+  useEffect(() => {
+    if (slides.length > 0 && slides[0]?.image) {
+      const link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "image";
+      link.href = slides[0].image;
+      document.head.appendChild(link);
+
+      return () => {
+        try {
+          document.head.removeChild(link);
+        } catch (e) {
+          // Ignore if already unmounted
+        }
+      };
+    }
+  }, [slides]);
 
   useEffect(() => {
     let isMounted = true;
@@ -35,8 +53,12 @@ export default function AboutHero() {
                   if (!slide.image) return resolve();
                   const img = new Image();
                   img.src = slide.image;
-                  img.onload = resolve;
-                  img.onerror = resolve;
+                  if ("decode" in img) {
+                    img.decode().then(resolve).catch(resolve);
+                  } else {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                  }
                 });
               })
             );
@@ -97,7 +119,8 @@ export default function AboutHero() {
             src={slide.image}
             alt={slide.title || 'About Banner'}
             fetchPriority={index === 0 ? 'high' : 'auto'}
-            decoding="async"
+            loading="eager"
+            decoding="sync"
             className="w-full h-full object-cover object-center"
           />
 
