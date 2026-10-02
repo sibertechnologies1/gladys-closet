@@ -3,106 +3,72 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { getSiteContent } from "../../lib/content";
 
-import hero1 from "./Images/hero1.jpg";
-import hero2 from "./Images/hero2.jpg";
-import hero3 from "./Images/hero3.jpg";
-import hero4 from "./Images/hero4.jpg";
-import hero5 from "./Images/hero5.jpg";
-import hero6 from "./Images/hero6.jpg";
-import hero7 from "./Images/hero7.jpg";
-
-const defaultSlides = [
-  {
-    id: 1,
-    image: hero1,
-    subtitle: "New Arrival",
-    title: "Urban Chic & Street Style",
-    description: "Express your individuality with our vibrant statement dresses and accessories.",
-    cta: "Shop The Look",
-  },
-  {
-    id: 2,
-    image: hero2,
-    subtitle: "Fine Jewelry",
-    title: "Layered Elegance",
-    description: "Discover handcrafted gold-tone pendants and layered chains for every occasion.",
-    cta: "Explore Jewelry",
-  },
-  {
-    id: 3,
-    image: hero3,
-    subtitle: "Autumn Collection",
-    title: "Classic Overcoats & Tailoring",
-    description: "Refined outerwear designed to keep you warm with timeless sophistication.",
-    cta: "Shop Outerwear",
-  },
-  {
-    id: 4,
-    image: hero4,
-    subtitle: "Pop of Color",
-    title: "Bold Knitwear & Accessories",
-    description: "Brighten your wardrobe with rich textures and striking color combinations.",
-    cta: "Shop Knits",
-  },
-  {
-    id: 5,
-    image: hero5,
-    subtitle: "Luxury Details",
-    title: "Minimalist Pendant Sets",
-    description: "Subtle gold craftsmanship tailored to complement high-fashion aesthetics.",
-    cta: "View Collection",
-  },
-  {
-    id: 6,
-    image: hero6,
-    subtitle: "Signature Accessories",
-    title: "Modern Chain Collections",
-    description: "Sleek geometric lines combined with premium materials for daily luxury.",
-    cta: "Shop Accessories",
-  },
-  {
-    id: 7,
-    image: hero7,
-    subtitle: "Contemporary Wear",
-    title: "Tailored Tones & Layering",
-    description: "Clean silhouettes and versatile cuts engineered for supreme comfort.",
-    cta: "Shop Apparel",
-  },
-];
+const LOCAL_STORAGE_KEY = "cached_home_hero_slides";
 
 export default function HomeHeroSection() {
-  const [slides, setSlides] = useState(defaultSlides);
-  const [current, setCurrent] = useState(0);
+  // Read from localStorage instantly on component initialization
+  const [slides, setSlides] = useState(() => {
+    try {
+      const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
 
-  // Fetch dynamic slides from Supabase
+  const [current, setCurrent] = useState(0);
+  const [loading, setLoading] = useState(() => slides.length === 0);
+
+  // Fetch updated slides from Supabase in the background
   useEffect(() => {
-    getSiteContent().then((data) => {
-      if (data.home_hero_slides) {
-        try {
+    let isMounted = true;
+
+    async function loadSlides() {
+      try {
+        const data = await getSiteContent();
+        if (data?.home_hero_slides) {
           const parsed = JSON.parse(data.home_hero_slides);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setSlides(parsed);
+            // Save to localStorage for instant loads on future visits/reloads
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(parsed));
+
+            // Preload images before updating state to avoid flicker
+            await Promise.all(
+              parsed.map((slide) => {
+                return new Promise((resolve) => {
+                  if (!slide.image) return resolve();
+                  const img = new Image();
+                  img.src = slide.image;
+                  img.onload = resolve;
+                  img.onerror = resolve;
+                });
+              })
+            );
+
+            if (isMounted) {
+              setSlides(parsed);
+            }
           }
-        } catch (e) {
-          console.error("Error parsing home_hero_slides JSON:", e);
+        }
+      } catch (e) {
+        console.error("Error loading home hero slides:", e);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
         }
       }
-    });
-  }, []);
+    }
 
-  // Preload all slide images into browser cache immediately
-  useEffect(() => {
-    slides.forEach((slide) => {
-      if (slide.image) {
-        const img = new Image();
-        img.src = slide.image;
-      }
-    });
-  }, [slides]);
+    loadSlides();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Autoplay timer
   useEffect(() => {
-    if (slides.length === 0) return;
+    if (slides.length <= 1) return;
     const timer = setInterval(() => {
       setCurrent((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
     }, 5000);
@@ -117,37 +83,51 @@ export default function HomeHeroSection() {
     setCurrent((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
   };
 
+  // Hide component until initial slides load if cache is completely empty
+  if (loading && slides.length === 0) {
+    return <div className="w-full h-[80vh] min-h-[550px]" />;
+  }
+
   if (slides.length === 0) return null;
 
   const currentSlide = slides[current] || slides[0];
 
   return (
-    <section className="relative w-full h-[80vh] min-h-[550px] bg-gray-900 overflow-hidden">
-      <AnimatePresence mode="wait">
+    <section className="relative w-full h-[80vh] min-h-[550px] overflow-hidden">
+      {/* Permanent base image to prevent flashing background during transitions */}
+      <img
+        src={currentSlide.image}
+        alt={currentSlide.title || "Home Banner Background"}
+        className="absolute inset-0 w-full h-full object-cover object-center"
+      />
+
+      <AnimatePresence initial={false}>
         <motion.div
           key={currentSlide.id || current}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.7 }}
+          transition={{ duration: 0.35, ease: "easeInOut" }}
           className="absolute inset-0 w-full h-full"
         >
-          {/* Background Image */}
+          {/* Active Banner Image */}
           <img
             src={currentSlide.image}
             alt={currentSlide.title || "Home Banner"}
+            fetchPriority={current === 0 ? "high" : "auto"}
+            decoding="async"
             className="w-full h-full object-cover object-center"
           />
 
-          {/* Dark Overlay for Readability */}
+          {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent" />
 
-          {/* Slide Content */}
+          {/* Text Content */}
           <div className="absolute inset-0 max-w-7xl mx-auto px-6 flex flex-col justify-center text-white">
             <motion.div
-              initial={{ y: 20, opacity: 0 }}
+              initial={{ y: 12, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
+              transition={{ delay: 0.1, duration: 0.3 }}
               className="max-w-xl space-y-4"
             >
               {currentSlide.subtitle && (
@@ -160,7 +140,7 @@ export default function HomeHeroSection() {
                   {currentSlide.title}
                 </h1>
               )}
-              {(currentSlide.description || currentSlide.subtitle) && (
+              {currentSlide.description && (
                 <p className="text-sm md:text-base text-gray-200 leading-relaxed">
                   {currentSlide.description}
                 </p>
@@ -177,37 +157,43 @@ export default function HomeHeroSection() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Controls: Prev / Next Buttons */}
-      <button
-        onClick={handlePrev}
-        aria-label="Previous Slide"
-        className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-md transition"
-      >
-        <FiChevronLeft className="w-6 h-6" />
-      </button>
-      <button
-        onClick={handleNext}
-        aria-label="Next Slide"
-        className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-md transition"
-      >
-        <FiChevronRight className="w-6 h-6" />
-      </button>
-
-      {/* Pagination Dots */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
-        {slides.map((_, idx) => (
+      {/* Prev / Next Controls */}
+      {slides.length > 1 && (
+        <>
           <button
-            key={idx}
-            onClick={() => setCurrent(idx)}
-            aria-label={`Go to slide ${idx + 1}`}
-            className={`h-2.5 rounded-full transition-all ${
-              current === idx
-                ? "w-8 bg-amber-300"
-                : "w-2.5 bg-white/50 hover:bg-white/80"
-            }`}
-          />
-        ))}
-      </div>
+            onClick={handlePrev}
+            aria-label="Previous Slide"
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-md transition z-10"
+          >
+            <FiChevronLeft className="w-6 h-6" />
+          </button>
+          <button
+            onClick={handleNext}
+            aria-label="Next Slide"
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-md transition z-10"
+          >
+            <FiChevronRight className="w-6 h-6" />
+          </button>
+        </>
+      )}
+
+      {/* Pagination Indicators */}
+      {slides.length > 1 && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
+          {slides.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrent(idx)}
+              aria-label={`Go to slide ${idx + 1}`}
+              className={`h-2.5 rounded-full transition-all ${
+                current === idx
+                  ? "w-8 bg-amber-300"
+                  : "w-2.5 bg-white/50 hover:bg-white/80"
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
