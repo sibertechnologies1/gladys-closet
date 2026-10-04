@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { FcGoogle } from 'react-icons/fc';
-import { FiMail, FiCheckCircle } from 'react-icons/fi';
+import { FiMail } from 'react-icons/fi';
 import logo from '../logo.png';
 
 export default function Signup() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -16,14 +17,28 @@ export default function Signup() {
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    setEmailError('');
+
+    // Strict Email Validation
+    const emailClean = email.trim();
+    const strictEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+
+    if (!emailClean) {
+      setEmailError('Email address is required.');
+      return;
+    } else if (!strictEmailRegex.test(emailClean)) {
+      setEmailError('Please enter a full email address (e.g. name@mail.com).');
+      return;
+    }
+
+    setLoading(true);
 
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: emailClean.toLowerCase(),
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName.trim() },
         emailRedirectTo: `${window.location.origin}/login`,
       },
     });
@@ -87,15 +102,16 @@ export default function Signup() {
           <div className="flex-1 h-px bg-gray-200" />
         </div>
 
-        <form onSubmit={handleSignup} className="space-y-4">
-        <p className="text-xs text-gray-500 mb-4">
-              Fields marked with an asterisk (<span className="text-red-500 font-bold">*</span>) are required.
-            </p>
+        <form onSubmit={handleSignup} noValidate className="space-y-4">
+          <p className="text-xs text-gray-500 mb-4">
+            Fields marked with an asterisk (<span className="text-red-500 font-bold">*</span>) are required.
+          </p>
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Full Name <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+              Full Name <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
-              required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               className="w-full p-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-brand-purple"
@@ -104,23 +120,32 @@ export default function Signup() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Email <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+              Email <span className="text-red-500">*</span>
+            </label>
             <input
               type="email"
-              required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-brand-purple"
-              placeholder="you@example.com"
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError('');
+              }}
+              className={`w-full p-3 border rounded-xl text-sm outline-none focus:border-brand-purple ${
+                emailError ? 'border-red-500' : 'border-gray-200'
+              }`}
+              placeholder="name@mail.com"
             />
+            {emailError && (
+              <p className="text-xs text-red-500 font-medium mt-1">{emailError}</p>
+            )}
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Password <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+              Password <span className="text-red-500">*</span>
+            </label>
             <input
               type="password"
-              required
-              minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-brand-purple"

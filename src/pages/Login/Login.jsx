@@ -7,6 +7,7 @@ import logo from '../logo.png';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -37,10 +38,27 @@ export default function Login() {
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    setEmailError('');
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    // Strict Email Validation
+    const emailClean = email.trim();
+    const strictEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+
+    if (!emailClean) {
+      setEmailError('Email address is required.');
+      return;
+    } else if (!strictEmailRegex.test(emailClean)) {
+      setEmailError('Please enter a full email address (e.g. name@mail.com).');
+      return;
+    }
+
+    setLoading(true);
+
+    const { data, error } = await supabase.auth.signInWithPassword({ 
+      email: emailClean.toLowerCase(), 
+      password 
+    });
 
     if (error) {
       setError(error.message);
@@ -66,13 +84,11 @@ export default function Login() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-lg max-w-md w-full space-y-6">
         <div className="text-center">
-          
-            <img 
-              src={logo} 
-              alt="Gladys Closet Logo" 
-              className="h-16 w-auto mx-auto object-contain rounded-full shadow-sm cursor-pointer"
-            />
-
+          <img 
+            src={logo} 
+            alt="Gladys Closet Logo" 
+            className="h-16 w-auto mx-auto object-contain rounded-full shadow-sm cursor-pointer"
+          />
           <h1 className="text-2xl font-black text-brand-navy">Welcome Back</h1>
           <p className="text-sm text-gray-500 mt-1">Sign in to access your account and orders</p>
         </div>
@@ -98,27 +114,37 @@ export default function Login() {
           <div className="flex-1 h-px bg-gray-200" />
         </div>
 
-        <form onSubmit={handleEmailLogin} className="space-y-4">
-            <p className="text-xs text-gray-500 mb-4">
-              Fields marked with an asterisk (<span className="text-red-500 font-bold">*</span>) are required.
-            </p>
+        <form onSubmit={handleEmailLogin} noValidate className="space-y-4">
+          <p className="text-xs text-gray-500 mb-4">
+            Fields marked with an asterisk (<span className="text-red-500 font-bold">*</span>) are required.
+          </p>
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Email <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+              Email <span className="text-red-500">*</span>
+            </label>
             <input
               type="email"
-              required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-brand-purple"
-              placeholder="you@example.com"
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError('');
+              }}
+              className={`w-full p-3 border rounded-xl text-sm outline-none focus:border-brand-purple ${
+                emailError ? 'border-red-500' : 'border-gray-200'
+              }`}
+              placeholder="name@mail.com"
             />
+            {emailError && (
+              <p className="text-xs text-red-500 font-medium mt-1">{emailError}</p>
+            )}
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Password <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+              Password <span className="text-red-500">*</span>
+            </label>
             <input
               type="password"
-              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-brand-purple"
@@ -129,7 +155,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brand-purple text-white py-3 rounded-xl font-semibold text-sm hover:bg-brand-pink transition duration-300"
+            className="w-full bg-brand-purple text-white py-3 rounded-xl font-semibold text-sm hover:bg-brand-pink transition duration-300 disabled:opacity-50"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
