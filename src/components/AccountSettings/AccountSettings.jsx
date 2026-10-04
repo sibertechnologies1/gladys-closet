@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { FiTrash2 } from 'react-icons/fi';
 
 export default function AccountSettings() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   const handleDeleteAccount = async () => {
     const confirmed = window.confirm(
@@ -19,7 +17,7 @@ export default function AccountSettings() {
     setError('');
 
     try {
-      // 1. Call RPC function to delete account and order data from DB
+      // 1. Trigger deletion via RPC
       const { error: rpcError } = await supabase.rpc('delete_user_account');
 
       if (rpcError && !rpcError.message?.includes('JWT expired')) {
@@ -33,15 +31,15 @@ export default function AccountSettings() {
         return;
       }
     } finally {
-      // 2. Force complete sign out & clear local browser storage
+      // 2. Clear browser session storage
       await supabase.auth.signOut({ scope: 'local' });
       localStorage.clear();
       sessionStorage.clear();
 
       alert('Your account has been permanently deleted.');
       
-      // 3. Force page reload to clear in-memory state
-      window.location.href = '/';
+      // 3. Force page reload to reset state
+      window.location.href = '/signup';
     }
   };
 
