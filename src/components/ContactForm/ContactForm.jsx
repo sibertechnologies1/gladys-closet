@@ -16,7 +16,6 @@ export default function ContactForm() {
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Auto-fill email if user is logged in
   useEffect(() => {
     async function loadUserData() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -51,18 +50,18 @@ export default function ContactForm() {
       }
     }
 
-    // 2. Strict Email Validation
+    // 2. Strict Email Validation (Blocks p@gmail and missing top-level domains)
     const emailClean = formData.email.trim();
-    const strictEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const strictEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
     if (!emailClean) {
       errors.email = 'Email address is required.';
     } else if (!strictEmailRegex.test(emailClean)) {
-      errors.email = 'Enter a valid email address (e.g. name@mail.com).';
+      errors.email = 'Please enter a full email address (e.g. name@mail.com).';
     }
 
     // 3. Location Validation
     const locationClean = formData.location.trim();
-    const locationRegex = /^[a-zA-Z\s,.-]+$/;
+    const locationRegex = /^[a-zA-Z0-9\s,.-/#]+$/;
     if (!locationClean) {
       errors.location = 'Location is required.';
     } else if (locationClean.length < 2) {
@@ -87,7 +86,6 @@ export default function ContactForm() {
     setLoading(true);
 
     try {
-      // 1. Save submission to Supabase
       const { error: dbError } = await supabase
         .from('contact_messages')
         .insert([
@@ -102,7 +100,6 @@ export default function ContactForm() {
 
       if (dbError) throw dbError;
 
-      // 2. Trigger notification function
       await supabase.functions.invoke('send-contact-notification', {
         body: formData,
       });
@@ -121,7 +118,6 @@ export default function ContactForm() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* Left: Contact Info */}
         <div className="space-y-6">
           <div>
             <span className="text-xs font-bold text-purple-600 uppercase tracking-widest">
@@ -178,7 +174,6 @@ export default function ContactForm() {
           </div>
         </div>
 
-        {/* Right: Interactive Form */}
         <div className="lg:col-span-2 bg-white p-6 sm:p-10 rounded-3xl border border-gray-100 shadow-sm">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Send Us a Message</h2>
           <p className="text-xs text-gray-500 mb-6">
@@ -206,7 +201,7 @@ export default function ContactForm() {
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
@@ -215,7 +210,6 @@ export default function ContactForm() {
                   <input
                     type="text"
                     name="name"
-                    required
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="Gladys Closet"
@@ -229,10 +223,9 @@ export default function ContactForm() {
                   <input
                     type="email"
                     name="email"
-                    required
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="example@gmail.com"
+                    placeholder="name@mail.com"
                     className={`w-full bg-gray-50 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-purple-600 ${
                       fieldErrors.email ? 'border-red-500' : 'border-gray-200'
                     }`}
@@ -284,7 +277,6 @@ export default function ContactForm() {
                 <textarea
                   rows="5"
                   name="message"
-                  required
                   value={formData.message}
                   onChange={handleChange}
                   placeholder="How can we help you?"

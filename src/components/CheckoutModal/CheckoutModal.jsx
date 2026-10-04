@@ -55,13 +55,13 @@ export default function CheckoutModal({ isOpen, onClose }) {
       errors.phone = 'Enter a valid phone number (e.g. 0241234567).';
     }
 
-    // 2. Strict Email Validation
+    // 2. Strict Email Validation (Blocks p@gmail and missing top-level domains)
     const emailClean = customer.email.trim();
-    const strictEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const strictEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
     if (!emailClean) {
       errors.email = 'Email address is required.';
     } else if (!strictEmailRegex.test(emailClean)) {
-      errors.email = 'Enter a valid email address (e.g. ama@gmail.com).';
+      errors.email = 'Please enter a full email address (e.g. name@mail.com).';
     }
 
     // 3. Location/Address Validation
@@ -81,18 +81,15 @@ export default function CheckoutModal({ isOpen, onClose }) {
 
   const handlePaymentSuccess = async (response, orderNumber, orderId) => {
     try {
-      // 1. Update order status in Supabase database
       await supabase
         .from('orders')
         .update({ status: 'paid', paystack_reference: response.reference })
         .eq('id', orderId);
 
-      // 2. Reduce stock for each item in the cart
       for (const item of cart) {
         const targetId = item.id || item.product_id;
         if (!targetId) continue;
 
-        // Fetch the latest stock from the DB
         const { data: product, error: fetchErr } = await supabase
           .from('products')
           .select('stock')
@@ -120,14 +117,12 @@ export default function CheckoutModal({ isOpen, onClose }) {
         }
       }
 
-      // 3. Format cart items for the Edge Function receipt
       const formattedItems = cart.map((item) => ({
         name: item.name,
         quantity: item.quantity,
         price: (item.price_pesewas || item.price * 100) / 100,
       }));
 
-      // 4. Trigger send-order-confirmation Edge Function
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vtlezevxnuyahpxzcutm.supabase.co';
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -148,14 +143,12 @@ export default function CheckoutModal({ isOpen, onClose }) {
         }),
       });
 
-      // 5. Save order ID locally for guest account registration flow
       sessionStorage.setItem('last_order_id', orderId);
 
       clearCart();
       setLoading(false);
       onClose();
 
-      // 6. Navigate to confirmation page
       navigate('/order-success', {
         state: {
           orderId,
@@ -254,7 +247,6 @@ export default function CheckoutModal({ isOpen, onClose }) {
           exit={{ opacity: 0, scale: 0.95 }}
           className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-purple-100"
         >
-          {/* Header */}
           <div className="p-6 bg-brand-purple text-white flex justify-between items-center">
             <div>
               <h2 className="text-xl font-extrabold tracking-wide">Delivery & Payment</h2>
@@ -265,8 +257,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
             </button>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handlePaystackPayment} className="p-6 space-y-4">
+          <form onSubmit={handlePaystackPayment} noValidate className="p-6 space-y-4">
             <p className="text-xs text-gray-500">
               Fields marked with an asterisk (<span className="text-red-500 font-bold">*</span>) are required.
             </p>
@@ -276,7 +267,6 @@ export default function CheckoutModal({ isOpen, onClose }) {
                 Full Name <span className="text-red-500">*</span>
               </label>
               <input
-                required
                 type="text"
                 name="name"
                 value={customer.name}
@@ -292,12 +282,11 @@ export default function CheckoutModal({ isOpen, onClose }) {
                   Email <span className="text-red-500">*</span>
                 </label>
                 <input
-                  required
                   type="email"
                   name="email"
                   value={customer.email}
                   onChange={handleChange}
-                  placeholder="ama@gmail.com"
+                  placeholder="name@mail.com"
                   className={`w-full px-4 py-2.5 rounded-xl border focus:outline-none focus:border-brand-purple text-sm ${
                     fieldErrors.email ? 'border-red-500' : 'border-purple-200'
                   }`}
@@ -312,7 +301,6 @@ export default function CheckoutModal({ isOpen, onClose }) {
                   Phone Number <span className="text-red-500">*</span>
                 </label>
                 <input
-                  required
                   type="tel"
                   name="phone"
                   value={customer.phone}
@@ -341,7 +329,6 @@ export default function CheckoutModal({ isOpen, onClose }) {
               />
             </div>
 
-            {/* Total Summary */}
             <div className="p-4 rounded-xl bg-brand-lightPurple flex justify-between items-center my-2">
               <span className="text-sm font-bold text-brand-purple">Total Amount Due</span>
               <span className="text-xl font-black text-brand-navy">
