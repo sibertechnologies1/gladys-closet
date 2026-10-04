@@ -10,7 +10,7 @@ export default function AccountSettings() {
 
   const handleDeleteAccount = async () => {
     const confirmed = window.confirm(
-      'Are you sure you want to delete your account? This action is permanent and cannot be undone.'
+      'Are you sure you want to delete your account? All orders and profile history will be permanently deleted.'
     );
 
     if (!confirmed) return;
@@ -19,31 +19,29 @@ export default function AccountSettings() {
     setError('');
 
     try {
-      // 1. Call the secure RPC function to delete user
+      // 1. Call RPC function to delete account and order data from DB
       const { error: rpcError } = await supabase.rpc('delete_user_account');
 
       if (rpcError && !rpcError.message?.includes('JWT expired')) {
         throw rpcError;
       }
     } catch (err) {
-      // If error is NOT JWT expiration, show error and stop
       if (!err.message?.includes('JWT expired')) {
         console.error('Error deleting account:', err);
-        setError(err.message || 'Failed to delete account. Please try again.');
+        setError(err.message || 'Failed to delete account.');
         setLoading(false);
         return;
       }
-    }
-
-    // 2. Perform local cleanups (Executes even if JWT expired because user is wiped from auth.users)
-    try {
-      localStorage.clear();
-      await supabase.auth.signOut();
-    } catch (e) {
-      // Ignore session clearance errors if token is already invalidated
     } finally {
-      alert('Your account has been deleted successfully.');
-      navigate('/');
+      // 2. Force complete sign out & clear local browser storage
+      await supabase.auth.signOut({ scope: 'local' });
+      localStorage.clear();
+      sessionStorage.clear();
+
+      alert('Your account has been permanently deleted.');
+      
+      // 3. Force page reload to clear in-memory state
+      window.location.href = '/';
     }
   };
 
@@ -51,7 +49,7 @@ export default function AccountSettings() {
     <div className="bg-red-50 border border-red-100 rounded-2xl p-6">
       <h3 className="text-lg font-bold text-red-600 mb-2">Delete Account</h3>
       <p className="text-xs text-gray-600 mb-4">
-        Once deleted, your profile and saved data will be removed. You can sign up again anytime with the same email address.
+        Once deleted, your profile and purchase history will be permanently removed.
       </p>
 
       {error && (
