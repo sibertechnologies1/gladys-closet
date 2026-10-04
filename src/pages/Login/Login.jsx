@@ -99,8 +99,11 @@ export default function Login() {
         </div>
 
         <form onSubmit={handleEmailLogin} className="space-y-4">
+            <p className="text-xs text-gray-500 mb-4">
+              Fields marked with an asterisk (<span className="text-red-500 font-bold">*</span>) are required.
+            </p>
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Email</label>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Email <span className="text-red-500">*</span></label>
             <input
               type="email"
               required
@@ -112,7 +115,7 @@ export default function Login() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Password</label>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Password <span className="text-red-500">*</span></label>
             <input
               type="password"
               required

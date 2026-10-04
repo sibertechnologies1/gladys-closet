@@ -75,91 +75,88 @@ export default function AdminSiteManager() {
     loadAdminData();
   }, []);
 
-async function loadAdminData() {
-  setLoading(true);
+  async function loadAdminData() {
+    setLoading(true);
 
-  // 1. Fetch store settings
-  const { data: settings } = await supabase
-    .from("store_settings")
-    .select("*")
-    .eq("id", 1)
-    .maybeSingle();
+    // 1. Fetch store settings
+    const { data: settings } = await supabase
+      .from("store_settings")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
 
-  if (settings) {
-    setLogoUrl(settings.logo_url || "");
-    setFooterDescription(settings.footer_description || "");
-    setContactAddress(settings.contact_address || "");
-    setContactPhone(settings.contact_phone || "");
-    setContactEmail(settings.contact_email || "");
+    if (settings) {
+      setLogoUrl(settings.logo_url || "");
+      setFooterDescription(settings.footer_description || "");
+      setContactAddress(settings.contact_address || "");
+      setContactPhone(settings.contact_phone || "");
+      setContactEmail(settings.contact_email || "");
 
-    // Check developed_by columns first, then fall back to created_by columns
-    setorderDevelopedByText(
-      settings.created_by_text || ""
-    );
-    setorderDevelopedByLink(
-      settings.created_by_link || ""
-    );
-    setorderDevelopedByPosition(
-      settings.created_by_position || "right"
-    );
+      // Check developed_by columns first, then fall back to created_by columns
+      setorderDevelopedByText(
+        settings.created_by_text || ""
+      );
+      setorderDevelopedByLink(
+        settings.created_by_link || ""
+      );
+      setorderDevelopedByPosition(
+        settings.created_by_position || "right"
+      );
 
-    setCategories(settings.footer_categories || []);
+      setCategories(settings.footer_categories || []);
+    }
+
+    // 2. Fetch social links
+    const { data: socialData } = await supabase
+      .from("social_links")
+      .select("*")
+      .order("order_index", { ascending: true });
+    if (socialData) setSocials(socialData);
+
+    // 3. Fetch custom pages
+    const { data: pageData } = await supabase
+      .from("custom_pages")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (pageData) setPages(pageData);
+
+    // 4. Fetch nav items
+    const { data: tabData } = await supabase
+      .from("navigation_tabs")
+      .select("*")
+      .order("order_index", { ascending: true });
+    if (tabData) setTabs(tabData);
+
+    setLoading(false);
   }
 
-  // 2. Fetch social links
-  const { data: socialData } = await supabase
-    .from("social_links")
-    .select("*")
-    .order("order_index", { ascending: true });
-  if (socialData) setSocials(socialData);
+  async function handleFooterSave(e) {
+    e.preventDefault();
+    setSavingFooter(true);
 
-  // 3. Fetch custom pages
-  const { data: pageData } = await supabase
-    .from("custom_pages")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (pageData) setPages(pageData);
+    const { error } = await supabase
+      .from("store_settings")
+      .upsert({
+        id: 1,
+        footer_description: footerDescription,
+        contact_address: contactAddress,
+        contact_phone: contactPhone,
+        contact_email: contactEmail,
+        created_by_text: orderDevelopedByText,
+        created_by_link: orderDevelopedByLink,
+        created_by_position: orderDevelopedByPosition,
+      });
 
-  // 4. Fetch nav items
-  const { data: tabData } = await supabase
-    .from("navigation_tabs")
-    .select("*")
-    .order("order_index", { ascending: true });
-  if (tabData) setTabs(tabData);
+    setSavingFooter(false);
 
-  setLoading(false);
-}
+    if (error) {
+      console.error("Error saving footer settings:", error);
+      alert(`Failed to save footer settings: ${error.message}`);
+      return;
+    }
 
-async function handleFooterSave(e) {
-  e.preventDefault();
-  setSavingFooter(true);
-
-  const { error } = await supabase
-    .from("store_settings")
-    .upsert({
-      id: 1,
-      footer_description: footerDescription,
-      contact_address: contactAddress,
-      contact_phone: contactPhone,
-      contact_email: contactEmail,
-      created_by_text: orderDevelopedByText,
-      created_by_link: orderDevelopedByLink,
-      created_by_position: orderDevelopedByPosition,
-      created_by_text: orderDevelopedByText,
-      created_by_link: orderDevelopedByLink,
-      created_by_position: orderDevelopedByPosition,
-    });
-
-  setSavingFooter(false);
-
-  if (error) {
-    console.error("Error saving footer settings:", error);
-    alert(`Failed to save footer settings: ${error.message}`);
-    return;
+    alert("Footer details and attribution saved successfully!");
   }
-
-  alert("Footer details and attribution saved successfully!");
-}
 
   // Handle Logo Upload or URL update
   async function handleLogoUpload(e) {

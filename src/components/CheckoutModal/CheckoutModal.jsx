@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiLock } from 'react-icons/fi';
 import { useCart } from '../../context/CartContext';
 import { supabase } from '../../lib/supabase';
+import LocationInput from '../LocationInput/LocationInput';
 
 export default function CheckoutModal({ isOpen, onClose }) {
   const { cart, totalPesewas, clearCart } = useCart();
@@ -17,6 +18,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
     city: 'Accra',
     region: 'Greater Accra',
   });
+  const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
     if (!window.PaystackPop) {
@@ -30,7 +32,51 @@ export default function CheckoutModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   const handleChange = (e) => {
-    setCustomer({ ...customer, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setCustomer({ ...customer, [name]: value });
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const validateCheckoutForm = () => {
+    const errors = {};
+
+    // 1. Strict Phone Number Validation
+    const phoneClean = customer.phone.trim();
+    const ghanaPhoneRegex = /^(?:\+233|0)(20|23|24|25|26|27|28|50|53|54|55|56|57|59|30)\d{7}$/;
+    const sequentialRegex = /^1234567890$/;
+
+    if (!phoneClean) {
+      errors.phone = 'Phone number is required.';
+    } else if (sequentialRegex.test(phoneClean)) {
+      errors.phone = 'Please enter a valid phone number.';
+    } else if (!ghanaPhoneRegex.test(phoneClean.replace(/\s+/g, ''))) {
+      errors.phone = 'Enter a valid phone number (e.g. 0241234567).';
+    }
+
+    // 2. Strict Email Validation
+    const emailClean = customer.email.trim();
+    const strictEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailClean) {
+      errors.email = 'Email address is required.';
+    } else if (!strictEmailRegex.test(emailClean)) {
+      errors.email = 'Enter a valid email address (e.g. ama@gmail.com).';
+    }
+
+    // 3. Location/Address Validation
+    const addressClean = customer.address.trim();
+    const addressRegex = /^[a-zA-Z0-9\s,.-/#]+$/;
+
+    if (!addressClean) {
+      errors.address = 'Delivery address is required.';
+    } else if (addressClean.length < 3) {
+      errors.address = 'Please enter a specific delivery address (at least 3 characters).';
+    } else if (!addressRegex.test(addressClean)) {
+      errors.address = 'Address contains invalid characters.';
+    }
+
+    return errors;
   };
 
   const handlePaymentSuccess = async (response, orderNumber, orderId) => {
@@ -131,6 +177,12 @@ export default function CheckoutModal({ isOpen, onClose }) {
       return;
     }
 
+    const validationErrors = validateCheckoutForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
+      return;
+    }
+
     setLoading(true);
     const orderNumber = `GC-${Date.now()}`;
 
@@ -144,10 +196,10 @@ export default function CheckoutModal({ isOpen, onClose }) {
           {
             user_id: currentUserId,
             order_number: orderNumber,
-            customer_name: customer.name,
-            customer_email: customer.email,
-            customer_phone: customer.phone,
-            delivery_address: customer.address,
+            customer_name: customer.name.trim(),
+            customer_email: customer.email.trim().toLowerCase(),
+            customer_phone: customer.phone.trim(),
+            delivery_address: customer.address.trim(),
             city: customer.city,
             region: customer.region,
             items: cart,
@@ -166,7 +218,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
 
       const handler = window.PaystackPop.setup({
         key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
-        email: customer.email,
+        email: customer.email.trim().toLowerCase(),
         amount: totalPesewas,
         currency: 'GHS',
         ref: orderNumber,
@@ -215,8 +267,14 @@ export default function CheckoutModal({ isOpen, onClose }) {
 
           {/* Form */}
           <form onSubmit={handlePaystackPayment} className="p-6 space-y-4">
+            <p className="text-xs text-gray-500">
+              Fields marked with an asterisk (<span className="text-red-500 font-bold">*</span>) are required.
+            </p>
+
             <div>
-              <label className="block text-xs font-bold text-brand-navy uppercase mb-1">Full Name</label>
+              <label className="block text-xs font-bold text-brand-navy uppercase mb-1">
+                Full Name <span className="text-red-500">*</span>
+              </label>
               <input
                 required
                 type="text"
@@ -230,7 +288,9 @@ export default function CheckoutModal({ isOpen, onClose }) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-brand-navy uppercase mb-1">Email</label>
+                <label className="block text-xs font-bold text-brand-navy uppercase mb-1">
+                  Email <span className="text-red-500">*</span>
+                </label>
                 <input
                   required
                   type="email"
@@ -238,11 +298,19 @@ export default function CheckoutModal({ isOpen, onClose }) {
                   value={customer.email}
                   onChange={handleChange}
                   placeholder="ama@gmail.com"
-                  className="w-full px-4 py-2.5 rounded-xl border border-purple-200 focus:outline-none focus:border-brand-purple text-sm"
+                  className={`w-full px-4 py-2.5 rounded-xl border focus:outline-none focus:border-brand-purple text-sm ${
+                    fieldErrors.email ? 'border-red-500' : 'border-purple-200'
+                  }`}
                 />
+                {fieldErrors.email && (
+                  <p className="text-xs text-red-500 mt-1 font-medium">{fieldErrors.email}</p>
+                )}
               </div>
+
               <div>
-                <label className="block text-xs font-bold text-brand-navy uppercase mb-1">Phone Number</label>
+                <label className="block text-xs font-bold text-brand-navy uppercase mb-1">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
                 <input
                   required
                   type="tel"
@@ -250,22 +318,27 @@ export default function CheckoutModal({ isOpen, onClose }) {
                   value={customer.phone}
                   onChange={handleChange}
                   placeholder="024XXXXXXX"
-                  className="w-full px-4 py-2.5 rounded-xl border border-purple-200 focus:outline-none focus:border-brand-purple text-sm"
+                  className={`w-full px-4 py-2.5 rounded-xl border focus:outline-none focus:border-brand-purple text-sm ${
+                    fieldErrors.phone ? 'border-red-500' : 'border-purple-200'
+                  }`}
                 />
+                {fieldErrors.phone && (
+                  <p className="text-xs text-red-500 mt-1 font-medium">{fieldErrors.phone}</p>
+                )}
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-brand-navy uppercase mb-1">Delivery Address</label>
-              <textarea
-                required
-                name="address"
-                rows="2"
+              <LocationInput
                 value={customer.address}
-                onChange={handleChange}
-                placeholder="House No., Street Name, Landmark"
-                className="w-full px-4 py-2.5 rounded-xl border border-purple-200 focus:outline-none focus:border-brand-purple text-sm"
-              ></textarea>
+                onChange={(val) => {
+                  setCustomer((prev) => ({ ...prev, address: val }));
+                  if (fieldErrors.address) {
+                    setFieldErrors((prev) => ({ ...prev, address: '' }));
+                  }
+                }}
+                error={fieldErrors.address}
+              />
             </div>
 
             {/* Total Summary */}

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { FiArrowRight } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 
 const categories = [
   {
@@ -34,12 +35,22 @@ const categories = [
 ];
 
 export default function FeaturedCategories({ onSelectCategory }) {
+  const navigate = useNavigate();
+
   useEffect(() => {
     categories.forEach((cat) => {
       const img = new Image();
       img.src = cat.image;
     });
   }, []);
+
+  const handleCategoryClick = (slug) => {
+    if (onSelectCategory) {
+      onSelectCategory(slug);
+    } else {
+      navigate(`/shop?category=${slug}`);
+    }
+  };
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-16">
@@ -64,7 +75,7 @@ export default function FeaturedCategories({ onSelectCategory }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: index * 0.1 }}
-            onClick={() => onSelectCategory && onSelectCategory(cat.slug)}
+            onClick={() => handleCategoryClick(cat.slug)}
             className="group relative h-64 sm:h-72 lg:h-80 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300"
           >
             {/* Category Image */}

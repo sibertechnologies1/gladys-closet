@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 import { getSiteContent } from "../../lib/content";
 
 const LOCAL_STORAGE_KEY = "cached_home_hero_slides";
 
 export default function HomeHeroSection() {
+  const navigate = useNavigate();
+
   const [slides, setSlides] = useState(() => {
     try {
       const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -102,6 +105,12 @@ export default function HomeHeroSection() {
     setCurrent((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
   };
 
+  const handleCtaClick = (slide) => {
+    // Navigates to a specific category link if defined in admin, or falls back to /shop
+    const targetPath = slide.link || "/shop";
+    navigate(targetPath);
+  };
+
   if (loading && slides.length === 0) {
     return <div className="w-full h-[80vh] min-h-[550px]" />;
   }
@@ -162,7 +171,10 @@ export default function HomeHeroSection() {
               )}
               {currentSlide.cta && (
                 <div className="pt-2">
-                  <button className="bg-amber-300 hover:bg-amber-400 text-gray-900 font-bold px-7 py-3 rounded-lg text-sm transition-all transform hover:-translate-y-0.5 shadow-lg">
+                  <button
+                    onClick={() => handleCtaClick(currentSlide)}
+                    className="bg-amber-300 hover:bg-amber-400 text-gray-900 font-bold px-7 py-3 rounded-lg text-sm transition-all transform hover:-translate-y-0.5 shadow-lg active:scale-95"
+                  >
                     {currentSlide.cta}
                   </button>
                 </div>
