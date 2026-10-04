@@ -1,20 +1,32 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { FcGoogle } from 'react-icons/fc';
 import logo from '../logo.png';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Populate initial state from route location state passed from Signup page
+  const [email, setEmail] = useState(location.state?.email || '');
+  const [password, setPassword] = useState(location.state?.password || '');
   const [emailError, setEmailError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+
+  useEffect(() => {
+    // If state contains pre-filled details from signup, assign them
+    if (location.state?.email) {
+      setEmail(location.state.email);
+    }
+    if (location.state?.password) {
+      setPassword(location.state.password);
+    }
+  }, [location.state]);
 
   // Helper function to direct users based on their role
   const handlePostLoginRedirect = async (user) => {
-    // 1. Check user metadata for admin role or flag
     const isAdminMeta = user?.user_metadata?.role === 'admin' || user?.user_metadata?.is_admin === true;
 
     if (isAdminMeta) {
@@ -22,7 +34,6 @@ export default function Login() {
       return;
     }
 
-    // 2. Check public.profiles table if roles are stored in database tables
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')

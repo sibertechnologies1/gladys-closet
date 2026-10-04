@@ -48,11 +48,16 @@ export default function Signup() {
       setLoading(false);
     } else {
       setLoading(false);
-      // Show confirmation modal if user signup succeeds and requires email verification
       if (data?.user && !data?.session) {
         setShowModal(true);
       } else {
-        navigate('/shop');
+        // Pass signup credentials to Login component state
+        navigate('/login', { 
+          state: { 
+            email: emailClean.toLowerCase(), 
+            password: password 
+          } 
+        });
       }
     }
   };
@@ -62,11 +67,21 @@ export default function Signup() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${window.location.origin}/shop`,
       },
     });
 
     if (error) setError(error.message);
+  };
+
+  const handleProceedToLogin = () => {
+    // Pass captured credentials when user clicks modal button
+    navigate('/login', { 
+      state: { 
+        email: email.trim().toLowerCase(), 
+        password: password 
+      } 
+    });
   };
 
   return (
@@ -187,7 +202,7 @@ export default function Signup() {
               </p>
             </div>
             <button
-              onClick={() => navigate('/login')}
+              onClick={handleProceedToLogin}
               className="w-full bg-brand-purple text-white py-2.5 rounded-xl text-xs font-bold hover:bg-brand-pink transition"
             >
               Proceed to Sign In
